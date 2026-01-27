@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Request a Grooming Appointment</title>
+  </head>
+  <body>
+    <h1>Request a Grooming Appointment</h1>
+    <p>Fill this out and we’ll confirm your appointment by text/call.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Submit Request</button>
+    </form>
+  </body>
+</html>
