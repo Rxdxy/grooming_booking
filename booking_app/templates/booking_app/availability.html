@@ -1,5 +1,5 @@
 {% extends "booking_app/base.html" %}
-{% block title %}Calendar{% endblock %}
+{% block title %}Availability{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -7,20 +7,20 @@
     <div class="card-soft p-3 p-md-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <h1 class="h3 mb-1">Nazar’s Calendar</h1>
+          <h1 class="h3 mb-1">Available times</h1>
           <p class="kicker mb-0">
-            Click an event to open it in the admin.
+            Pick a day to see what is open.
           </p>
         </div>
-        <a class="btn btn-outline-secondary" href="/admin/">
-          Admin
+        <a class="btn btn-outline-secondary" href="/book/">
+          Request booking
         </a>
       </div>
 
-      <div id="calendar"></div>
+      <div id="availabilityCalendar"></div>
 
       <p class="text-muted small mt-3 mb-0">
-        Tip: Events use the booking’s created time for now.
+        Next step: we will hide personal info and only show busy blocks.
       </p>
     </div>
   </div>
@@ -36,24 +36,22 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const el = document.getElementById("calendar");
+    const el = document.getElementById("availabilityCalendar");
+
     const calendar = new FullCalendar.Calendar(el, {
       timeZone: "America/Chicago",
-      initialView: "dayGridMonth",
+      initialView: "timeGridWeek",
       height: "auto",
+      nowIndicator: true,
       headerToolbar: {
         left: "prev,next today",
         center: "title",
-        right: "dayGridMonth,timeGridWeek,timeGridDay",
+        right: "timeGridWeek,timeGridDay,dayGridMonth",
       },
-      events: "/api/calendar-events/",
-      eventClick: function (info) {
-        if (info.event.url) {
-          info.jsEvent.preventDefault();
-          window.location.href = info.event.url;
-        }
-      },
+
+      events: "/api/availability-slots/",
     });
+
     calendar.render();
   });
 </script>
