@@ -1,17 +1,110 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Request a Grooming Appointment</title>
-  </head>
-  <body>
-    <h1>Request a Grooming Appointment</h1>
-    <p>Fill this out and we’ll confirm your appointment by text/call.</p>
+{% extends "booking_app/base.html" %}
+{% block title %}Request Booking{% endblock %}
 
-    <form method="post">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit">Submit Request</button>
-    </form>
-  </body>
-</html>
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+
+    <div class="card-soft p-3 p-md-4">
+      <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+        <div>
+          <h1 class="h3 mb-1">Request an appointment</h1>
+          <p class="kicker mb-0">Fill this out and we’ll confirm by text/call.</p>
+        </div>
+        <div class="step-pill">
+          <span id="stepLabel">Step 1 of 3</span>
+        </div>
+      </div>
+
+      <div class="progress-soft mb-4">
+        <div id="stepProgress"></div>
+      </div>
+
+      <form method="post" id="bookingForm" novalidate>
+        {% csrf_token %}
+
+        <!-- STEP 1: Client -->
+        <section class="wizard-step" data-step="1">
+          <h2 class="h5 mb-3">Your info</h2>
+
+          <div class="mb-3">
+            <label class="form-label">Full name</label>
+            {{ form.full_name }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Address</label>
+            {{ form.address }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Phone</label>
+            {{ form.phone }}
+          </div>
+        </section>
+
+        <!-- STEP 2: Pet -->
+        <section class="wizard-step d-none" data-step="2">
+          <h2 class="h5 mb-3">Pet info</h2>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Pet name</label>
+              {{ form.pet_name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Breed</label>
+              {{ form.pet_breed }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Weight (lbs)</label>
+              {{ form.pet_weight_lbs }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Age (years)</label>
+              {{ form.pet_age_years }}
+            </div>
+          </div>
+        </section>
+
+        <!-- STEP 3: Services + availability -->
+        <section class="wizard-step d-none" data-step="3">
+          <h2 class="h5 mb-3">Appointment details</h2>
+
+          <div class="mb-3">
+            <label class="form-label">Services</label>
+            <div class="border rounded-3 p-3" style="border-color: rgba(17,24,39,.08) !important;">
+              {{ form.services }}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Days & times you’re available</label>
+            {{ form.availability_notes }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">How often is your pet groomed?</label>
+            {{ form.grooming_frequency }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Special needs (optional)</label>
+            {{ form.special_needs }}
+          </div>
+        </section>
+
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary" id="backBtn">Back</button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-accent" id="nextBtn">Next</button>
+            <button type="submit" class="btn btn-accent d-none" id="submitBtn">Submit request</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -26,6 +26,8 @@ class BookingRequest(models.Model):
     pet_breed = models.CharField(max_length=100)
     pet_weight_lbs = models.PositiveIntegerField()
     pet_age_years = models.PositiveIntegerField()
+    scheduled_start = models.DateTimeField(null=True, blank=True)
+    scheduled_end = models.DateTimeField(null=True, blank=True)
 
     services = models.ManyToManyField(Service)
 

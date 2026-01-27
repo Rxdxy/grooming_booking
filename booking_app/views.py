@@ -35,3 +35,6 @@ def book_request(request):
 
 def book_success(request):
     return render(request, "booking_app/book_success.html")
+
+def calendar_dashboard(request):
+    return render(request, "booking_app/calendar.html")
