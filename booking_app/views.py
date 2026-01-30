@@ -1,11 +1,16 @@
 import datetime
 
-
-from django.shortcuts import redirect, render
 from django.http import JsonResponse
-from .forms import BookingRequestForm
-from .models import BookingRequest, Client
+from django.shortcuts import redirect, render
 from django.utils import timezone
+
+from .forms import BookingRequestForm, NewClientApplicationForm
+from .models import (
+    BookingRequest,
+    Client,
+    NewClientApplication,
+    Service,
+)
 
 
 def book_request(request):
@@ -18,33 +23,59 @@ def book_request(request):
                 phone=form.cleaned_data["phone"],
             )
 
-            booking = BookingRequest.objects.create(
-                client=client,
-                pet_name=form.cleaned_data["pet_name"],
-                pet_breed=form.cleaned_data["pet_breed"],
-                pet_weight_lbs=form.cleaned_data["pet_weight_lbs"],
-                pet_age_years=form.cleaned_data["pet_age_years"],
-                availability_notes=form.cleaned_data["availability_notes"],
-                grooming_frequency=form.cleaned_data["grooming_frequency"],
-                special_needs=form.cleaned_data["special_needs"],
-            )
+            booking = form.save(commit=False)
+            booking.client = client
+            booking.scheduled_start = request.POST.get("scheduled_start")
+            booking.scheduled_end = request.POST.get("scheduled_end")
 
-            booking.services.set(form.cleaned_data["services"])
+            booking.save()
+            form.save_m2m()
+
             return redirect("book_success")
     else:
         form = BookingRequestForm()
 
-    return render(request, "booking_app/book_request.html", {"form": form})
+    return render(
+        request,
+        "booking_app/book_request.html",
+        {
+            "form": form,
+            "services": Service.objects.all(),
+        },
+    )
 
 
 def book_success(request):
     return render(request, "booking_app/book_success.html")
 
+
+def apply(request):
+    if request.method == "POST":
+        form = NewClientApplicationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("apply_success")
+    else:
+        form = NewClientApplicationForm()
+
+    return render(
+        request,
+        "booking_app/apply.html",
+        {"form": form},
+    )
+
+
+def apply_success(request):
+    return render(request, "booking_app/apply_success.html")
+
+
 def calendar_dashboard(request):
     return render(request, "booking_app/calendar.html")
 
+
 def availability_dashboard(request):
     return render(request, "booking_app/availability.html")
+
 
 def calendar_events(request):
     events = []
@@ -63,7 +94,9 @@ def calendar_events(request):
             "id": booking.id,
             "title": title,
             "start": start.isoformat(),
-            "url": f"/admin/booking_app/bookingrequest/{booking.id}/change/",
+            "url": (
+                f"/admin/booking_app/bookingrequest/{booking.id}/change/"
+            ),
         }
 
         if end is not None:
@@ -71,12 +104,14 @@ def calendar_events(request):
 
         events.append(event)
 
+    return JsonResponse(events, safe=False)
+
+
 def availability_events(request):
     events = []
 
     bookings = (
         BookingRequest.objects
-        .filter(status__in=["pending", "confirmed"])
         .exclude(scheduled_start__isnull=True)
         .exclude(scheduled_end__isnull=True)
     )
@@ -89,6 +124,9 @@ def availability_events(request):
                 "end": booking.scheduled_end.isoformat(),
             }
         )
+
+    return JsonResponse(events, safe=False)
+
 
 def availability_slots(request):
     tz = timezone.get_current_timezone()

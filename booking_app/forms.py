@@ -1,9 +1,8 @@
 from django import forms
+from .models import NewClientApplication, Service, BookingRequest
 
-from .models import Service
 
-
-class BookingRequestForm(forms.Form):
+class BookingRequestForm(forms.ModelForm):
     full_name = forms.CharField(
         max_length=120,
         widget=forms.TextInput(
@@ -73,24 +72,7 @@ class BookingRequestForm(forms.Form):
         queryset=Service.objects.all(),
         widget=forms.CheckboxSelectMultiple,
     )
-    availability_notes = forms.CharField(
-        widget=forms.Textarea(
-            attrs={
-                "class": "form-control",
-                "rows": 4,
-                "placeholder": "Example: Weekdays after 3pm",
-            }
-        ),
-    )
-    grooming_frequency = forms.CharField(
-        max_length=100,
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-control",
-                "placeholder": "Example: Every 6 weeks",
-            }
-        ),
-    )
+    
     special_needs = forms.CharField(
         required=False,
         widget=forms.Textarea(
@@ -101,3 +83,93 @@ class BookingRequestForm(forms.Form):
             }
         ),
     )
+
+    class Meta:
+        model = BookingRequest
+        fields = (
+            "full_name",
+            "address",
+            "phone",
+            "pet_name",
+            "pet_breed",
+            "pet_weight_lbs",
+            "pet_age_years",
+            "services",
+            "special_needs",
+            "scheduled_start",
+            "scheduled_end",
+        )
+
+
+# New client application form
+class NewClientApplicationForm(forms.ModelForm):
+    class Meta:
+        model = NewClientApplication
+        fields = (
+            "full_name",
+            "address",
+            "zip_code",
+            "phone",
+            "pet_name",
+            "pet_breed",
+            "pet_weight_lbs",
+            "pet_age_years",
+            "notes",
+        )
+        widgets = {
+            "full_name": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Jane Doe",
+                }
+            ),
+            "address": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "123 Main St, Chicago, IL",
+                }
+            ),
+            "zip_code": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "60610",
+                }
+            ),
+            "phone": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "(555) 555-5555",
+                }
+            ),
+            "pet_name": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Buddy",
+                }
+            ),
+            "pet_breed": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Poodle",
+                }
+            ),
+            "pet_weight_lbs": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "25",
+                }
+            ),
+            "pet_age_years": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "4",
+                }
+            ),
+            "notes": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 4,
+                    "placeholder": "Anything Nazar should know?",
+                }
+            ),
+        }

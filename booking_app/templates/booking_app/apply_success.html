@@ -1,0 +1,26 @@
+{% extends "booking_app/base.html" %}
+{% block title %}Application Submitted{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-6">
+    <div class="card-soft p-3 p-md-4 text-center">
+      <h1 class="h3 mb-2">Application submitted 💛</h1>
+
+      <p class="text-muted mb-3">
+        Thanks for reaching out! Nazar will review your information and
+        get back to you shortly.
+      </p>
+
+      <p class="small text-muted mb-4">
+        Because grooming is mobile, new clients are approved based on
+        location and availability.
+      </p>
+
+      <a href="/availability/" class="btn btn-accent">
+        View availability
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

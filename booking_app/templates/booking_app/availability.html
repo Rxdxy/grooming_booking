@@ -1,6 +1,8 @@
 {% extends "booking_app/base.html" %}
 {% block title %}Availability{% endblock %}
 
+
+
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-12 col-lg-10">
@@ -11,6 +13,11 @@
           <p class="kicker mb-0">
             Pick a day to see what is open.
           </p>
+          <p class="small text-muted mb-0">
+            New client?
+            <a href="/apply/">Apply here</a>
+            before requesting an appointment.
+          </p>
         </div>
         <a class="btn btn-outline-secondary" href="/book/">
           Request booking
@@ -20,7 +27,7 @@
       <div id="availabilityCalendar"></div>
 
       <p class="text-muted small mt-3 mb-0">
-        Next step: we will hide personal info and only show busy blocks.
+        Only available time blocks are shown.
       </p>
     </div>
   </div>
@@ -50,6 +57,24 @@
       },
 
       events: "/api/availability-slots/",
+
+      eventClick: function (info) {
+        const start = info.event.start;
+        const end = info.event.end;
+
+        if (!start || !end) {
+          return;
+        }
+
+        const startIso = start.toISOString();
+        const endIso = end.toISOString();
+
+        window.location.href =
+          "/book/?slot_start=" +
+          encodeURIComponent(startIso) +
+          "&slot_end=" +
+          encodeURIComponent(endIso);
+      },
     });
 
     calendar.render();

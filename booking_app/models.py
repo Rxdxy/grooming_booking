@@ -65,8 +65,7 @@ class BookingRequest(models.Model):
 
     services = models.ManyToManyField(Service)
 
-    availability_notes = models.TextField()
-    grooming_frequency = models.CharField(max_length=100)
+    
     special_needs = models.TextField(blank=True)
 
     STATUS_CHOICES = [

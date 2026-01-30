@@ -12,4 +12,7 @@ urlpatterns = [
         name="availability_events"),
     path("api/availability-slots/", views.availability_slots,
         name="availability_slots"),
+    path("apply/", views.apply, name="apply"),
+    path("apply/success/", views.apply_success, name="apply_success"),
+    
 ]

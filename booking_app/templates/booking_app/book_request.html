@@ -10,6 +10,11 @@
         <div>
           <h1 class="h3 mb-1">Request an appointment</h1>
           <p class="kicker mb-0">Fill this out and we’ll confirm by text/call.</p>
+          <p class="small text-muted mb-0">
+            New client?
+            <a href="/apply/">Apply here</a>
+            before requesting an appointment.
+          </p>
         </div>
         <div class="step-pill">
           <span id="stepLabel">Step 1 of 3</span>
@@ -20,8 +25,29 @@
         <div id="stepProgress"></div>
       </div>
 
-      <form method="post" id="bookingForm" novalidate>
+      <form method="post" id="bookingForm" data-wizard-form novalidate>
         {% csrf_token %}
+        <input type="hidden" name="scheduled_start" id="scheduledStartInput" />
+        <input type="hidden" name="scheduled_end" id="scheduledEndInput" />
+
+        {% if form.errors %}
+          <div class="alert alert-warning" role="alert">
+            <div class="fw-semibold mb-1">Please fix the highlighted fields</div>
+            <ul class="mb-0 small">
+              {% for field, errors in form.errors.items %}
+                {% for err in errors %}
+                  <li>
+                    {% if field != "__all__" %}
+                      {{ field|capfirst }}: {{ err }}
+                    {% else %}
+                      {{ err }}
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
 
         <!-- STEP 1: Client -->
         <section class="wizard-step" data-step="1">
@@ -71,21 +97,36 @@
         <section class="wizard-step d-none" data-step="3">
           <h2 class="h5 mb-3">Appointment details</h2>
 
+          <div class="mb-3 d-none" id="selectedSlotSummaryWrap">
+            <div class="small text-muted">Selected time</div>
+            <div class="fw-semibold" id="selectedSlotSummary"></div>
+          </div>
+
           <div class="mb-3">
             <label class="form-label">Services</label>
             <div class="border rounded-3 p-3" style="border-color: rgba(17,24,39,.08) !important;">
-              {{ form.services }}
+
+              {% for service in form.services %}
+                <div class="form-check mb-2" data-service-desc>
+                  {{ service }}
+
+                  {% if "Full" in service.choice_label %}
+                    <div class="service-desc small text-muted d-none">
+                      Bath with shampoo and conditioner, brush, blow dry, ears cleaning,
+                      nails clipping, teeth brushing, cologne, pad paws shaving,
+                      sanitary zone cleaning, full haircut.
+                    </div>
+                  {% elif "Bath" in service.choice_label %}
+                    <div class="service-desc small text-muted d-none">
+                      Bath with shampoo and conditioner, brush, blow dry, ears cleaning,
+                      nails clipping, teeth brushing, cologne, pad paws shaving,
+                      sanitary zone cleaning, trimming around eyes.
+                    </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+
             </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Days & times you’re available</label>
-            {{ form.availability_notes }}
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">How often is your pet groomed?</label>
-            {{ form.grooming_frequency }}
           </div>
 
           <div class="mb-3">
