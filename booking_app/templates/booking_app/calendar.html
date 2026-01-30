@@ -8,20 +8,53 @@
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h1 class="h3 mb-1">Nazar’s Calendar</h1>
-          <p class="kicker mb-0">
-            Click an event to open it in the admin.
-          </p>
         </div>
-        <a class="btn btn-outline-secondary" href="/django-admin/">
-          Admin
-        </a>
       </div>
 
       <div id="calendar"></div>
 
+      <div class="d-flex flex-wrap gap-2 justify-content-end mt-3 mb-3">
+        <a class="btn btn-accent" href="/book/?admin=1">Create booking</a>
+        <a
+          class="btn btn-outline-secondary"
+          href="/django-admin/booking_app/bookingrequest/"
+          target="_blank"
+          rel="noopener"
+        >
+          View booking list
+        </a>
+        <a
+          class="btn btn-outline-secondary"
+          href="/django-admin/booking_app/newclientapplication/"
+          target="_blank"
+          rel="noopener"
+        >
+          View applications
+        </a>
+      </div>
+
+      <div class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="h6 mb-0">Upcoming bookings</h2>
+          <span class="small text-muted" id="bookingCount"></span>
+        </div>
+        <div class="list-group" id="bookingList"></div>
+      </div>
+
       <p class="text-muted small mt-3 mb-0">
-        Tip: Events use the booking’s created time for now.
+        Tip: Tap a booking below to jump the calendar to that time.
       </p>
+
+      <div class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="h6 mb-0">New client applications</h2>
+          <span class="small text-muted" id="appCount"></span>
+        </div>
+        <div class="list-group" id="appList"></div>
+        <div class="small text-muted mt-2">
+          Pending only. Tap to open in admin.
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -35,8 +68,76 @@
 </script>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", async function () {
     const el = document.getElementById("calendar");
+    const listEl = document.getElementById("bookingList");
+    const countEl = document.getElementById("bookingCount");
+    const appListEl = document.getElementById("appList");
+    const appCountEl = document.getElementById("appCount");
+
+    function fmtChicago(iso) {
+      try {
+        const d = new Date(iso);
+        const fmt = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/Chicago",
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        });
+        return fmt.format(d);
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function timeOnly(iso) {
+      try {
+        const d = new Date(iso);
+        const fmt = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/Chicago",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+        return fmt.format(d);
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function jumpTo(calendar, iso) {
+      if (!iso) return;
+
+      calendar.changeView("timeGridDay");
+      calendar.gotoDate(iso);
+
+      // Scroll to the time (works in timeGrid views)
+      const t = timeOnly(iso);
+      if (t && typeof calendar.scrollToTime === "function") {
+        const hhmm = new Date(iso).toISOString().slice(11, 16);
+        calendar.scrollToTime(hhmm);
+      }
+    }
+
+    let data = [];
+    try {
+      const res = await fetch("/api/calendar-events/");
+      if (res.ok) {
+        data = await res.json();
+      }
+    } catch (e) {
+      data = [];
+    }
+
+    // Sort by start time
+    data.sort((a, b) => {
+      const as = a.start || "";
+      const bs = b.start || "";
+      return as.localeCompare(bs);
+    });
+
     const calendar = new FullCalendar.Calendar(el, {
       timeZone: "America/Chicago",
       initialView: "dayGridMonth",
@@ -46,15 +147,112 @@
         center: "title",
         right: "dayGridMonth,timeGridWeek,timeGridDay",
       },
-      events: "/api/calendar-events/",
+      events: data,
       eventClick: function (info) {
-        if (info.event.url) {
-          info.jsEvent.preventDefault();
-          window.location.href = info.event.url;
-        }
+        info.jsEvent.preventDefault();
+        jumpTo(calendar, info.event.startStr);
       },
     });
+
     calendar.render();
+
+    // Build the bottom list
+    if (countEl) {
+      countEl.textContent = data.length ? `${data.length} total` : "";
+    }
+
+    if (listEl) {
+      listEl.innerHTML = "";
+
+      const now = new Date();
+      const upcoming = data.filter((e) => {
+        if (!e.start) return false;
+        return new Date(e.start) >= now;
+      });
+      upcoming.slice(0, 30).forEach((e) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "list-group-item list-group-item-action";
+        btn.dataset.iso = e.start;
+
+        const when = fmtChicago(e.start);
+        const title = e.title || "Booking";
+
+        btn.innerHTML =
+          `<div class="d-flex justify-content-between align-items-start gap-3">` +
+          `<div>` +
+          `<div class="fw-semibold">${title}</div>` +
+          `<div class="small text-muted">${when}</div>` +
+          `</div>` +
+          `<div class="small text-muted">View</div>` +
+          `</div>`;
+
+        btn.addEventListener("click", () => {
+          jumpTo(calendar, e.start);
+        });
+
+        listEl.appendChild(btn);
+      });
+
+      if (!upcoming.length) {
+        const empty = document.createElement("div");
+        empty.className = "text-muted small";
+        empty.textContent = "No bookings yet.";
+        listEl.appendChild(empty);
+      }
+    }
+
+    // Build the applications list (pending only)
+    let apps = [];
+    try {
+      const resApps = await fetch("/api/pending-applications/");
+      if (resApps.ok) {
+        apps = await resApps.json();
+      }
+    } catch (e) {
+      apps = [];
+    }
+
+    if (appCountEl) {
+      appCountEl.textContent = apps.length ? `${apps.length} pending` : "";
+    }
+
+    if (appListEl) {
+      appListEl.innerHTML = "";
+
+      apps.slice(0, 30).forEach((a) => {
+        const link = document.createElement("a");
+        link.className = "list-group-item list-group-item-action";
+        link.href = a.admin_url || "#";
+        link.target = "_blank";
+        link.rel = "noopener";
+
+        const name = a.name || "Application";
+        const zip = a.zip_code ? `ZIP ${a.zip_code}` : "";
+        const addr = a.address || "";
+        const when = a.created ? fmtChicago(a.created) : "";
+
+        const meta = [addr, zip, when].filter(Boolean).join(" · ");
+
+        link.innerHTML =
+          `<div class="d-flex justify-content-between align-items-start gap-3">` +
+          `<div>` +
+          `<div class="fw-semibold">${name}</div>` +
+          `<div class="small text-muted">${meta}</div>` +
+          `</div>` +
+          `<div class="small text-muted">Admin</div>` +
+          `</div>`;
+
+        appListEl.appendChild(link);
+      });
+
+      if (!apps.length) {
+        const emptyA = document.createElement("div");
+        emptyA.className = "text-muted small";
+        emptyA.textContent = "No pending applications.";
+        appListEl.appendChild(emptyA);
+      }
+    }
   });
 </script>
 {% endblock %}

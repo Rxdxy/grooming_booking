@@ -1,9 +1,7 @@
 import datetime
-
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
-
 from .forms import BookingRequestForm, NewClientApplicationForm
 from .models import (
     BookingRequest,
@@ -25,8 +23,48 @@ def book_request(request):
 
             booking = form.save(commit=False)
             booking.client = client
-            booking.scheduled_start = request.POST.get("scheduled_start")
-            booking.scheduled_end = request.POST.get("scheduled_end")
+
+            start_raw = request.POST.get("scheduled_start")
+            end_raw = request.POST.get("scheduled_end")
+
+            # Admin manual booking flow: accept datetime-local inputs
+            manual_start = request.POST.get("manual_start")
+            manual_end = request.POST.get("manual_end")
+
+            if not start_raw and manual_start:
+                start_raw = manual_start
+
+            if not end_raw and manual_end:
+                end_raw = manual_end
+
+            start_dt = None
+            if start_raw:
+                start_clean = (
+                    start_raw.replace("Z", "+00:00")
+                    if "Z" in start_raw
+                    else start_raw
+                )
+                start_dt = datetime.datetime.fromisoformat(start_clean)
+                if timezone.is_naive(start_dt):
+                    start_dt = timezone.make_aware(start_dt)
+
+            end_dt = None
+            if end_raw:
+                end_clean = (
+                    end_raw.replace("Z", "+00:00")
+                    if "Z" in end_raw
+                    else end_raw
+                )
+                end_dt = datetime.datetime.fromisoformat(end_clean)
+                if timezone.is_naive(end_dt):
+                    end_dt = timezone.make_aware(end_dt)
+
+            booking.scheduled_start = start_dt
+
+            if end_dt is None and start_dt is not None:
+                end_dt = start_dt + datetime.timedelta(hours=1)
+
+            booking.scheduled_end = end_dt
 
             booking.save()
             form.save_m2m()
@@ -95,7 +133,7 @@ def calendar_events(request):
             "title": title,
             "start": start.isoformat(),
             "url": (
-                f"/admin/booking_app/bookingrequest/{booking.id}/change/"
+                f"/django-admin/booking_app/bookingrequest/{booking.id}/change/"
             ),
         }
 
@@ -213,3 +251,38 @@ def availability_slots(request):
         day = day + datetime.timedelta(days=1)
 
     return JsonResponse(events, safe=False)
+
+
+def pending_applications(request):
+    # Filter pending if the model has a status field. Otherwise, return all.
+    try:
+        apps = NewClientApplication.objects.filter(status="pending")
+    except Exception:
+        apps = NewClientApplication.objects.all()
+
+    # Order newest first (created_at if present, else id).
+    try:
+        apps = apps.order_by("-created_at")
+    except Exception:
+        apps = apps.order_by("-id")
+
+    data = []
+    for app in apps:
+        created = getattr(app, "created_at", None) or getattr(app, "created", None)
+        created_iso = created.isoformat() if created else None
+
+        data.append(
+            {
+                "id": app.id,
+                "name": getattr(app, "full_name", "") or getattr(app, "name", ""),
+                "zip_code": getattr(app, "zip_code", "") or getattr(app, "zip", ""),
+                "address": getattr(app, "address", ""),
+                "created": created_iso,
+                "admin_url": (
+                    f"/django-admin/booking_app/newclientapplication/"
+                    f"{app.id}/change/"
+                ),
+            }
+        )
+
+    return JsonResponse(data, safe=False)

@@ -14,5 +14,10 @@ urlpatterns = [
         name="availability_slots"),
     path("apply/", views.apply, name="apply"),
     path("apply/success/", views.apply_success, name="apply_success"),
+    path(
+        "api/pending-applications/",
+        views.pending_applications,
+        name="pending_applications",
+    ),
     
 ]
