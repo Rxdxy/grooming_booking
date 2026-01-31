@@ -33,31 +33,168 @@
         </a>
       </div>
 
-      <div class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h2 class="h6 mb-0">Upcoming bookings</h2>
+      <div class="mt-4 section-card">
+        <button
+          type="button"
+          class="section-toggle"
+          id="toggleBookings"
+          aria-expanded="true"
+        >
+          <span class="section-title">Upcoming bookings</span>
           <span class="small text-muted" id="bookingCount"></span>
+          <span class="section-caret" aria-hidden="true">▾</span>
+        </button>
+
+        <div id="bookingSection">
+          <div class="list-group" id="bookingList"></div>
         </div>
-        <div class="list-group" id="bookingList"></div>
       </div>
 
       <p class="text-muted small mt-3 mb-0">
-        Tip: Tap a booking below to jump the calendar to that time.
+        Tip: Tap a booking to reveal actions like Copy address.
       </p>
 
-      <div class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h2 class="h6 mb-0">New client applications</h2>
+      <div class="mt-4 section-card">
+        <button
+          type="button"
+          class="section-toggle"
+          id="toggleApps"
+          aria-expanded="true"
+        >
+          <span class="section-title">New client applications</span>
           <span class="small text-muted" id="appCount"></span>
-        </div>
-        <div class="list-group" id="appList"></div>
-        <div class="small text-muted mt-2">
-          Pending only. Tap to open in admin.
+          <span class="section-caret" aria-hidden="true">▾</span>
+        </button>
+
+        <div id="appSection">
+          <div class="list-group" id="appList"></div>
+          <div class="small text-muted mt-2">
+            Pending only. Tap to open in admin.
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<style>
+  .list-group-item.is-today {
+    border-left: 5px solid #f6c453;
+    background: rgba(246, 196, 83, 0.14);
+  }
+
+  .booking-row {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .booking-swipe {
+    position: relative;
+    width: 100%;
+    min-height: 64px;
+  }
+
+  .booking-front {
+    position: relative;
+    z-index: 2;
+    padding: 12px 16px;
+    background: inherit;
+    transition: transform 200ms ease;
+  }
+
+  .booking-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    z-index: 1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease;
+  }
+
+  .booking-row.is-open .booking-front {
+    transform: translateX(-148px);
+  }
+
+  .booking-row.is-open .booking-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .booking-actions .btn {
+    white-space: nowrap;
+  }
+
+  .copy-feedback {
+    margin-left: 10px;
+  }
+
+  /* Collapsible section header tile */
+  .section-card {
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 8px 22px rgba(16, 24, 40, 0.08);
+  }
+
+  .section-toggle {
+    width: 100%;
+    border: 0;
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    box-shadow: 0 2px 10px rgba(16, 24, 40, 0.06);
+  }
+
+  .section-toggle:hover {
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  .section-toggle:focus {
+    outline: none;
+    box-shadow:
+      0 0 0 3px rgba(246, 196, 83, 0.35),
+      0 2px 10px rgba(16, 24, 40, 0.06);
+  }
+
+  .section-title {
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .section-caret {
+    font-size: 18px;
+    line-height: 1;
+    transition: transform 160ms ease;
+  }
+
+  .section-toggle.is-collapsed .section-caret {
+    transform: rotate(-90deg);
+  }
+
+  #bookingSection,
+  #appSection {
+    margin-top: 10px;
+  }
+
+  .section-card .list-group-item {
+    border-radius: 12px;
+    margin-bottom: 8px;
+  }
+
+  .section-card .list-group-item:last-child {
+    margin-bottom: 0;
+  }
+</style>
 
 <link
   href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css"
@@ -107,6 +244,25 @@
       }
     }
 
+    function chicagoDayKey(isoOrDate) {
+      const d = typeof isoOrDate === "string"
+        ? new Date(isoOrDate)
+        : isoOrDate;
+
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Chicago",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(d);
+
+      const y = parts.find((p) => p.type === "year")?.value || "";
+      const m = parts.find((p) => p.type === "month")?.value || "";
+      const da = parts.find((p) => p.type === "day")?.value || "";
+
+      return `${y}-${m}-${da}`;
+    }
+
     function jumpTo(calendar, iso) {
       if (!iso) return;
 
@@ -120,6 +276,63 @@
         calendar.scrollToTime(hhmm);
       }
     }
+
+    function setExpanded(btn, section, expanded) {
+      if (!btn || !section) return;
+
+      btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+      btn.classList.toggle("is-collapsed", !expanded);
+
+      if (expanded) {
+        section.classList.remove("d-none");
+      } else {
+        section.classList.add("d-none");
+      }
+    }
+
+    async function tryCopy(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (e) {
+          return fallbackCopy(text);
+        }
+      } else {
+        return fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "0";
+      ta.style.left = "0";
+      ta.style.width = "1px";
+      ta.style.height = "1px";
+      ta.style.opacity = "0";
+      ta.style.pointerEvents = "none";
+
+      document.body.appendChild(ta);
+
+      // Focus + select is required for execCommand copy.
+      ta.focus({ preventScroll: true });
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+
+      let ok = false;
+      try {
+        ok = document.execCommand("copy");
+      } catch (e) {
+        ok = false;
+      }
+
+      ta.remove();
+      return ok;
+    }
+
 
     let data = [];
     try {
@@ -148,6 +361,11 @@
         right: "dayGridMonth,timeGridWeek,timeGridDay",
       },
       events: data,
+      dateClick: function (info) {
+        // In month view, clicking a day opens that day.
+        calendar.changeView("timeGridDay");
+        calendar.gotoDate(info.dateStr);
+      },
       eventClick: function (info) {
         info.jsEvent.preventDefault();
         jumpTo(calendar, info.event.startStr);
@@ -172,23 +390,92 @@
       upcoming.slice(0, 30).forEach((e) => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "list-group-item list-group-item-action";
+        btn.className = "list-group-item list-group-item-action booking-row";
+
+        const todayKey = chicagoDayKey(new Date());
+        const itemKey = chicagoDayKey(e.start);
+
+        if (itemKey === todayKey) {
+          btn.classList.add("is-today");
+        }
+
         btn.dataset.iso = e.start;
+        const addr = e.address || "";
+        btn.dataset.address = addr;
 
         const when = fmtChicago(e.start);
         const title = e.title || "Booking";
 
         btn.innerHTML =
+          `<div class="booking-swipe">` +
+          `<div class="booking-actions">` +
+          `<button type="button" class="btn btn-sm btn-outline-secondary" ` +
+          `data-action="copy">Copy address</button>` +
+          `<a class="btn btn-sm btn-accent" ` +
+          `href="/django-admin/booking_app/bookingrequest/" ` +
+          `target="_blank" rel="noopener" data-action="all">All bookings</a>` +
+          `</div>` +
+          `<div class="booking-front">` +
           `<div class="d-flex justify-content-between align-items-start gap-3">` +
           `<div>` +
           `<div class="fw-semibold">${title}</div>` +
           `<div class="small text-muted">${when}</div>` +
+          (addr ? `<div class="small text-muted">${addr}</div>` : ``) +
           `</div>` +
-          `<div class="small text-muted">View</div>` +
+          `</div>` +
+          `</div>` +
           `</div>`;
 
-        btn.addEventListener("click", () => {
-          jumpTo(calendar, e.start);
+        btn.addEventListener("click", async (ev) => {
+          const target = ev.target;
+          const action = target && target.getAttribute
+            ? target.getAttribute("data-action")
+            : null;
+
+          if (action === "copy") {
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            const text = (btn.dataset.address || "").trim();
+
+            let msg = "";
+            if (!text) {
+              msg = "No address";
+            } else {
+              const ok = await tryCopy(text);
+              msg = ok ? "Copied" : "Manual copy";
+
+              if (!ok) {
+                // Most reliable fallback when clipboard is blocked.
+                window.prompt("Copy address (Cmd+C):", text);
+              }
+            }
+
+            const feedback = document.createElement("span");
+            feedback.className = "small text-muted copy-feedback";
+            feedback.textContent = msg;
+            target.insertAdjacentElement("afterend", feedback);
+
+            window.setTimeout(() => {
+              feedback.remove();
+            }, 900);
+
+            return;
+          }
+
+          if (action === "all") {
+            ev.stopPropagation();
+            return;
+          }
+
+          const already = btn.classList.contains("is-open");
+          document.querySelectorAll(".booking-row.is-open").forEach((x) => {
+            x.classList.remove("is-open");
+          });
+
+          if (!already) {
+            btn.classList.add("is-open");
+          }
         });
 
         listEl.appendChild(btn);
@@ -252,6 +539,26 @@
         emptyA.textContent = "No pending applications.";
         appListEl.appendChild(emptyA);
       }
+    }
+
+    // Toggle booking section
+    const toggleBookings = document.getElementById("toggleBookings");
+    const bookingSection = document.getElementById("bookingSection");
+    if (toggleBookings && bookingSection) {
+      toggleBookings.addEventListener("click", () => {
+        const expanded = toggleBookings.getAttribute("aria-expanded") === "true";
+        setExpanded(toggleBookings, bookingSection, !expanded);
+      });
+    }
+
+    // Toggle applications section
+    const toggleApps = document.getElementById("toggleApps");
+    const appSection = document.getElementById("appSection");
+    if (toggleApps && appSection) {
+      toggleApps.addEventListener("click", () => {
+        const expanded = toggleApps.getAttribute("aria-expanded") === "true";
+        setExpanded(toggleApps, appSection, !expanded);
+      });
     }
   });
 </script>

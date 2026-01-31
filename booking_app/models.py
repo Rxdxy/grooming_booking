@@ -56,6 +56,7 @@ class Client(models.Model):
 
 class BookingRequest(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    address = models.CharField(max_length=255, blank=True)
     pet_name = models.CharField(max_length=100)
     pet_breed = models.CharField(max_length=100)
     pet_weight_lbs = models.PositiveIntegerField()
@@ -80,6 +81,11 @@ class BookingRequest(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.address and self.client_id:
+            self.address = self.client.address
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.client.full_name} - {self.pet_name}"

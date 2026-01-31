@@ -132,6 +132,7 @@ def calendar_events(request):
             "id": booking.id,
             "title": title,
             "start": start.isoformat(),
+            "address": booking.address or booking.client.address,
             "url": (
                 f"/django-admin/booking_app/bookingrequest/{booking.id}/change/"
             ),
