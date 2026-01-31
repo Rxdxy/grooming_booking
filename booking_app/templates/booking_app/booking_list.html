@@ -8,57 +8,360 @@
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h1 class="h3 mb-1">All bookings</h1>
-          <div class="text-muted small">Search and filter coming next.</div>
+          <div class="text-muted small">
+            Search by client, pet, breed, or address.
+          </div>
         </div>
         <a class="btn btn-outline-secondary" href="/calendar/">Back</a>
       </div>
 
-      {% if bookings %}
-  <div class="list-group">
-    {% for b in bookings %}
-      <a
-        class="list-group-item list-group-item-action"
-        href="/django-admin/booking_app/bookingrequest/{{ b.id }}/change/"
-        target="_blank"
-        rel="noopener"
-      >
-        <div class="d-flex justify-content-between align-items-start gap-3">
-          <div>
-            <div class="fw-semibold">
-              {{ b.client.full_name }} · {{ b.pet_name }}
-            </div>
-
-            <div class="small text-muted">
-              {% if b.scheduled_start %}
-                {{ b.scheduled_start }}
-              {% else %}
-                Requested time not set
-              {% endif %}
-              {% if b.scheduled_end %}
-                – {{ b.scheduled_end|time:"P" }}
-              {% endif %}
-            </div>
-
-            <div class="small text-muted">{{ b.address }}</div>
-
-            <div class="small text-muted">
-              {% for s in b.services.all %}
-                {{ s.name }}{% if not forloop.last %}, {% endif %}
-              {% endfor %}
-            </div>
+      <form class="mb-3" method="get" action="">
+        <div class="d-flex gap-2 align-items-start">
+          <div class="typeahead">
+            <input
+              class="form-control"
+              id="bookingSearch"
+              type="search"
+              name="q"
+              placeholder="Search clients or pets"
+              value="{{ q|default:'' }}"
+              autocomplete="off"
+            />
+            <div
+              class="typeahead-menu"
+              id="bookingTypeahead"
+              hidden
+            ></div>
           </div>
-
-          <span class="badge rounded-pill text-bg-light">
-            {{ b.status }}
-          </span>
+          <button class="btn btn-accent" type="submit">Search</button>
+          {% if q %}
+            <a class="btn btn-outline-secondary" href="/bookings/">Clear</a>
+          {% endif %}
         </div>
-      </a>
-    {% endfor %}
-  </div>
-{% else %}
-  <div class="text-muted">No bookings yet.</div>
-{% endif %}
+      </form>
+
+      {% if bookings %}
+        <div class="list-group" id="bookingListPage">
+          {% for b in bookings %}
+            <div
+              class="list-group-item booking-row"
+              data-address="{% if b.address %}{{ b.address|escape }}{% else %}{{ b.client.address|default:''|escape }}{% endif %}"
+            >
+              <div class="booking-swipe">
+                <div class="booking-actions">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    data-action="copy"
+                  >
+                    Copy address
+                  </button>
+                  <a
+                    class="btn btn-sm btn-accent"
+                    href="/django-admin/booking_app/bookingrequest/{{ b.id }}/change/"
+                    target="_blank"
+                    rel="noopener"
+                    data-action="open"
+                  >
+                    Open
+                  </a>
+                </div>
+
+                <div class="booking-front">
+                  <div
+                    class="d-flex justify-content-between align-items-start gap-3"
+                  >
+                    <div>
+                      <div class="fw-semibold">
+                        {{ b.client.full_name }} · {{ b.pet_name }}
+                      </div>
+
+                      <div class="small text-muted">
+                        {% if b.scheduled_start %}
+                          {{ b.scheduled_start }}
+                        {% else %}
+                          Requested time not set
+                        {% endif %}
+                        {% if b.scheduled_end %}
+                          – {{ b.scheduled_end|time:"P" }}
+                        {% endif %}
+                      </div>
+
+                      <div class="small text-muted">
+                        {% if b.address %}
+                          {{ b.address }}
+                        {% else %}
+                          {{ b.client.address }}
+                        {% endif %}
+                      </div>
+
+                      <div class="small text-muted">
+                        {% for s in b.services.all %}
+                          {{ s.name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                      </div>
+                    </div>
+
+                    <span class="badge rounded-pill text-bg-light">
+                      {{ b.status }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-muted">No bookings found.</div>
+      {% endif %}
     </div>
   </div>
 </div>
+
+<style>
+  .booking-row {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .booking-swipe {
+    position: relative;
+    width: 100%;
+    min-height: 64px;
+  }
+
+  .booking-front {
+    position: relative;
+    z-index: 2;
+    padding: 12px 16px;
+    background: inherit;
+    transition: transform 200ms ease;
+  }
+
+  .booking-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    z-index: 3;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease;
+  }
+
+  .booking-row.is-open .booking-front {
+    transform: translateX(-148px);
+    pointer-events: none;
+  }
+
+  .booking-row.is-open .booking-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .copy-feedback {
+    margin-left: 10px;
+  }
+
+  .typeahead {
+    position: relative;
+    flex: 1;
+  }
+
+  .typeahead-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--card, #fff);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.10);
+    padding: 6px;
+    z-index: 30;
+  }
+
+  .typeahead-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .typeahead-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+</style>
+
+<script>
+  (function () {
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "0";
+      ta.style.left = "0";
+      ta.style.width = "1px";
+      ta.style.height = "1px";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus({ preventScroll: true });
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      let ok = false;
+      try {
+        ok = document.execCommand("copy");
+      } catch (e) {
+        ok = false;
+      }
+      ta.remove();
+      return ok;
+    }
+
+    async function tryCopy(text) {
+      if (!text) return false;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (e) {
+          return fallbackCopy(text);
+        }
+      }
+      return fallbackCopy(text);
+    }
+
+    const list = document.getElementById("bookingListPage");
+    if (!list) return;
+
+    const search = document.getElementById("bookingSearch");
+    const menu = document.getElementById("bookingTypeahead");
+    let taTimer = null;
+
+    function closeMenu() {
+      if (!menu) return;
+      menu.hidden = true;
+      menu.innerHTML = "";
+    }
+
+    function openMenu(items) {
+      if (!menu) return;
+      if (!items || !items.length) {
+        closeMenu();
+        return;
+      }
+
+      menu.innerHTML = items
+        .map((t) => {
+          const safe = t.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          return (
+            '<button type="button" class="typeahead-item" '
+            + 'data-value="' + safe + '">' + safe + "</button>"
+          );
+        })
+        .join("");
+
+      menu.hidden = false;
+    }
+
+    async function fetchSuggestions(term) {
+      const url = "/api/booking-suggestions/?q=" + encodeURIComponent(term);
+      const res = await fetch(url, {
+        headers: { "Accept": "application/json" },
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data && data.items ? data.items : [];
+    }
+
+    function scheduleTypeahead() {
+      if (!search || !menu) return;
+
+      const term = (search.value || "").trim();
+      if (taTimer) window.clearTimeout(taTimer);
+
+      if (term.length < 2) {
+        closeMenu();
+        return;
+      }
+
+      taTimer = window.setTimeout(async () => {
+        const items = await fetchSuggestions(term);
+        openMenu(items);
+      }, 200);
+    }
+
+    if (search && menu) {
+      search.addEventListener("input", scheduleTypeahead);
+
+      menu.addEventListener("click", (ev) => {
+        const btn = ev.target.closest(".typeahead-item");
+        if (!btn) return;
+        const val = btn.getAttribute("data-value") || "";
+        search.value = val;
+        closeMenu();
+      });
+
+      document.addEventListener("click", (ev) => {
+        if (ev.target.closest(".typeahead")) return;
+        closeMenu();
+      });
+
+      search.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape") closeMenu();
+      });
+    }
+
+    list.addEventListener("click", async (ev) => {
+      const actionEl = ev.target.closest("[data-action]");
+
+      if (actionEl && actionEl.getAttribute("data-action") === "copy") {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+
+        const row = ev.target.closest(".booking-row");
+        if (!row) return;
+
+        const text = (row.dataset.address || "").trim();
+        if (!text) {
+          window.alert("No address on this booking.");
+          return;
+        }
+
+        const ok = await tryCopy(text);
+        if (!ok) {
+          window.prompt("Copy address (Cmd+C):", text);
+        }
+
+        const feedback = document.createElement("span");
+        feedback.className = "small text-muted copy-feedback";
+        feedback.textContent = ok ? "Copied" : "Manual copy";
+        actionEl.insertAdjacentElement("afterend", feedback);
+        window.setTimeout(() => feedback.remove(), 900);
+        return;
+      }
+
+      const row = ev.target.closest(".booking-row");
+      if (!row) return;
+
+      row.classList.toggle("is-open");
+    }, true);
+
+    document.addEventListener("click", (ev) => {
+      if (ev.target.closest(".booking-row")) return;
+      document.querySelectorAll(".booking-row.is-open").forEach((el) => {
+        el.classList.remove("is-open");
+      });
+    });
+  })();
+</script>
 {% endblock %}

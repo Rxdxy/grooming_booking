@@ -31,4 +31,9 @@ urlpatterns = [
     ),
     path("bookings/", views.bookings_list, name="bookings_list"),
     path("bookings_list/", views.bookings_list, name="bookings_list_legacy"),
+    path(
+    "api/booking-suggestions/",
+    views.booking_suggestions,
+    name="booking_suggestions",
+    ),
 ]

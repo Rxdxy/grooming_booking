@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
+from django.db.models import Q, Case, When, IntegerField
 from .forms import BookingRequestForm, NewClientApplicationForm
 from .models import (
     BookingRequest,
@@ -25,6 +26,10 @@ def book_request(request):
             booking = form.save(commit=False)
             booking.client = client
 
+            # Ensure address is stored on the booking (snapshot), so lists/copy work
+            if not getattr(booking, "address", ""):
+                booking.address = client.address
+
             start_raw = request.POST.get("scheduled_start")
             end_raw = request.POST.get("scheduled_end")
 
@@ -40,25 +45,21 @@ def book_request(request):
 
             start_dt = None
             if start_raw:
-                start_clean = (
-                    start_raw.replace("Z", "+00:00")
-                    if "Z" in start_raw
-                    else start_raw
-                )
+                start_clean = start_raw.replace("Z", "")
                 start_dt = datetime.datetime.fromisoformat(start_clean)
-                if timezone.is_naive(start_dt):
-                    start_dt = timezone.make_aware(start_dt)
+                start_dt = timezone.make_aware(
+                    start_dt,
+                    timezone.get_current_timezone(),
+                )
 
             end_dt = None
             if end_raw:
-                end_clean = (
-                    end_raw.replace("Z", "+00:00")
-                    if "Z" in end_raw
-                    else end_raw
-                )
+                end_clean = end_raw.replace("Z", "")
                 end_dt = datetime.datetime.fromisoformat(end_clean)
-                if timezone.is_naive(end_dt):
-                    end_dt = timezone.make_aware(end_dt)
+                end_dt = timezone.make_aware(
+                    end_dt,
+                    timezone.get_current_timezone(),
+                )
 
             booking.scheduled_start = start_dt
 
@@ -118,16 +119,91 @@ def availability_dashboard(request):
 
 @staff_member_required
 def bookings_list(request):
-    bookings = (
-        BookingRequest.objects.select_related("client")
+    q = (request.GET.get("q") or "").strip()
+
+    qs = (
+        BookingRequest.objects
+        .select_related("client")
         .prefetch_related("services")
-        .order_by("-scheduled_start", "-created_at")
     )
+
+    if q:
+        qs = qs.filter(
+            Q(client__full_name__icontains=q)
+            | Q(pet_name__icontains=q)
+            | Q(pet_breed__icontains=q)
+            | Q(address__icontains=q)
+        )
+
+    qs = qs.annotate(
+        _no_time=Case(
+            When(scheduled_start__isnull=True, then=1),
+            default=0,
+            output_field=IntegerField(),
+        )
+    ).order_by("_no_time", "scheduled_start", "-created_at")
+
     return render(
         request,
         "booking_app/booking_list.html",
-        {"bookings": bookings},
+        {
+            "bookings": qs,
+            "q": q,
+        },
     )
+
+
+# --- Inserted booking_suggestions view ---
+@staff_member_required
+def booking_suggestions(request):
+    q = (request.GET.get("q") or "").strip()
+
+    if len(q) < 2:
+        return JsonResponse({"items": []})
+
+    qs = BookingRequest.objects.select_related("client").filter(
+        Q(client__full_name__icontains=q)
+        | Q(pet_name__icontains=q)
+        | Q(pet_breed__icontains=q)
+        | Q(address__icontains=q)
+        | Q(client__address__icontains=q)
+    )
+
+    items = []
+    seen = set()
+    ql = q.lower()
+
+    for b in qs.order_by("-created_at")[:80]:
+        vals = [
+            (b.client.full_name or "").strip(),
+            (b.pet_name or "").strip(),
+            (getattr(b, "pet_breed", "") or "").strip(),
+            (getattr(b, "address", "") or "").strip(),
+            (getattr(b.client, "address", "") or "").strip(),
+        ]
+
+        for s in vals:
+            if not s:
+                continue
+
+            key = s.lower()
+            if ql not in key:
+                continue
+
+            if key in seen:
+                continue
+
+            seen.add(key)
+            items.append(s)
+
+            if len(items) >= 8:
+                break
+
+        if len(items) >= 8:
+            break
+
+    return JsonResponse({"items": items})
+
 
 
 def calendar_events(request):
@@ -135,8 +211,12 @@ def calendar_events(request):
     bookings = BookingRequest.objects.select_related("client").all()
 
     for booking in bookings:
-        start = booking.scheduled_start
-        end = booking.scheduled_end
+        start = timezone.localtime(booking.scheduled_start)
+        end = (
+            timezone.localtime(booking.scheduled_end)
+            if booking.scheduled_end
+            else None
+        )
 
         if start is None:
             continue

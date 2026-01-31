@@ -383,8 +383,7 @@
         return new Date(e.start) >= now;
       });
       upcoming.slice(0, 30).forEach((e) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
+        const btn = document.createElement("div");
         btn.className = "list-group-item list-group-item-action booking-row";
 
         const todayKey = chicagoDayKey(new Date());
