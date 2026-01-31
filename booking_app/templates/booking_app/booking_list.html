@@ -1,0 +1,64 @@
+{% extends "booking_app/base.html" %}
+{% block title %}All bookings{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-10">
+    <div class="card-soft p-3 p-md-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h1 class="h3 mb-1">All bookings</h1>
+          <div class="text-muted small">Search and filter coming next.</div>
+        </div>
+        <a class="btn btn-outline-secondary" href="/calendar/">Back</a>
+      </div>
+
+      {% if bookings %}
+  <div class="list-group">
+    {% for b in bookings %}
+      <a
+        class="list-group-item list-group-item-action"
+        href="/django-admin/booking_app/bookingrequest/{{ b.id }}/change/"
+        target="_blank"
+        rel="noopener"
+      >
+        <div class="d-flex justify-content-between align-items-start gap-3">
+          <div>
+            <div class="fw-semibold">
+              {{ b.client.full_name }} · {{ b.pet_name }}
+            </div>
+
+            <div class="small text-muted">
+              {% if b.scheduled_start %}
+                {{ b.scheduled_start }}
+              {% else %}
+                Requested time not set
+              {% endif %}
+              {% if b.scheduled_end %}
+                – {{ b.scheduled_end|time:"P" }}
+              {% endif %}
+            </div>
+
+            <div class="small text-muted">{{ b.address }}</div>
+
+            <div class="small text-muted">
+              {% for s in b.services.all %}
+                {{ s.name }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+          <span class="badge rounded-pill text-bg-light">
+            {{ b.status }}
+          </span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="text-muted">No bookings yet.</div>
+{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,6 +1,7 @@
 import datetime
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from .forms import BookingRequestForm, NewClientApplicationForm
 from .models import (
@@ -113,6 +114,20 @@ def calendar_dashboard(request):
 
 def availability_dashboard(request):
     return render(request, "booking_app/availability.html")
+
+
+@staff_member_required
+def bookings_list(request):
+    bookings = (
+        BookingRequest.objects.select_related("client")
+        .prefetch_related("services")
+        .order_by("-scheduled_start", "-created_at")
+    )
+    return render(
+        request,
+        "booking_app/booking_list.html",
+        {"bookings": bookings},
+    )
 
 
 def calendar_events(request):
