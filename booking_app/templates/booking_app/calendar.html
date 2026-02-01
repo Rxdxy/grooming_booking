@@ -364,6 +364,26 @@
     font-size: 13px;
     color: rgba(17, 24, 39, 0.65);
   }
+  .toast-wrap {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 9999;
+    display: grid;
+    gap: 10px;
+    max-width: 320px;
+  }
+
+  .toast {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.12);
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(17, 24, 39, 0.95);
+  }
 </style>
 
 <link
@@ -390,6 +410,25 @@
     const detailAddress = document.getElementById("detailAddress");
     const detailCopy = document.getElementById("detailCopy");
     const detailClose = document.getElementById("detailClose");
+
+    function showToast(message) {
+      let wrap = document.getElementById("toastWrap");
+      if (!wrap) {
+        wrap = document.createElement("div");
+        wrap.id = "toastWrap";
+        wrap.className = "toast-wrap";
+        document.body.appendChild(wrap);
+      }
+
+      const t = document.createElement("div");
+      t.className = "toast";
+      t.textContent = message;
+      wrap.appendChild(t);
+
+      window.setTimeout(() => {
+        t.remove();
+      }, 2200);
+    }
 
     let selectedStart = null;
     let selectedEnd = null;
@@ -760,14 +799,30 @@
           const action = (btn.getAttribute("data-action") || "").trim();
           if (!appId || !action) return;
 
-          btn.disabled = true;
+          const approveBtn = item.querySelector(
+            'button[data-action="approve"]'
+          );
+          const declineBtn = item.querySelector(
+            'button[data-action="decline"]'
+          );
+
+          if (approveBtn) approveBtn.disabled = true;
+          if (declineBtn) declineBtn.disabled = true;
 
           (async () => {
             const resp = await postAppAction(appId, action);
             if (!resp || !resp.ok) {
-              btn.disabled = false;
-              window.alert("Could not update application. Try again.");
+              if (approveBtn) approveBtn.disabled = false;
+              if (declineBtn) declineBtn.disabled = false;
+              showToast("Could not update. Try again.");
               return;
+            }
+
+            const newStatus = (resp.status || "pending").toLowerCase();
+            if (newStatus === "approved") {
+              showToast("Approved");
+            } else if (newStatus === "declined") {
+              showToast("Declined");
             }
 
             // Remove from local list + UI
