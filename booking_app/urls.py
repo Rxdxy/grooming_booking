@@ -22,6 +22,11 @@ urlpatterns = [
         views.availability_slots,
         name="availability_slots",
     ),
+    path(
+        "applications/",
+        views.applications_list,
+        name="applications_list",
+    ),
     path("apply/", views.apply, name="apply"),
     path("apply/success/", views.apply_success, name="apply_success"),
     path(
@@ -29,11 +34,16 @@ urlpatterns = [
         views.pending_applications,
         name="pending_applications",
     ),
+    path(
+        "api/application/<int:app_id>/action/",
+        views.application_action,
+        name="application_action",
+    ),
     path("bookings/", views.bookings_list, name="bookings_list"),
     path("bookings_list/", views.bookings_list, name="bookings_list_legacy"),
     path(
-    "api/booking-suggestions/",
-    views.booking_suggestions,
-    name="booking_suggestions",
+        "api/booking-suggestions/",
+        views.booking_suggestions,
+        name="booking_suggestions",
     ),
 ]

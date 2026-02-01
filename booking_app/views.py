@@ -1,8 +1,9 @@
 import datetime
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 from django.db.models import Q, Case, When, IntegerField
 from .forms import BookingRequestForm, NewClientApplicationForm
 from .models import (
@@ -150,6 +151,15 @@ def bookings_list(request):
             "bookings": qs,
             "q": q,
         },
+    )
+
+
+# --- Inserted applications_list view ---
+@staff_member_required
+def applications_list(request):
+    return render(
+        request,
+        "booking_app/applications_list.html",
     )
 
 
@@ -349,30 +359,50 @@ def availability_slots(request):
     return JsonResponse(events, safe=False)
 
 
-def pending_applications(request):
-    # Filter pending if the model has a status field. Otherwise, return all.
-    try:
-        apps = NewClientApplication.objects.filter(status="pending")
-    except Exception:
-        apps = NewClientApplication.objects.all()
 
-    # Order newest first (created_at if present, else id).
-    try:
-        apps = apps.order_by("-created_at")
-    except Exception:
-        apps = apps.order_by("-id")
+
+def _ensure_client_from_application(app):
+    phone = (getattr(app, "phone", "") or "").strip()
+    address = (getattr(app, "address", "") or "").strip()
+    full_name = (getattr(app, "full_name", "") or "").strip()
+
+    qs = Client.objects.all()
+
+    if phone:
+        qs = qs.filter(phone=phone)
+
+    if address:
+        qs = qs.filter(address=address)
+
+    existing = qs.first()
+    if existing:
+        return existing
+
+    return Client.objects.create(
+        full_name=full_name,
+        address=address,
+        phone=phone,
+    )
+
+
+def pending_applications(request):
+    apps = (
+        NewClientApplication.objects
+        .filter(status="pending")
+        .order_by("-created_at")
+    )
 
     data = []
     for app in apps:
-        created = getattr(app, "created_at", None) or getattr(app, "created", None)
+        created = getattr(app, "created_at", None)
         created_iso = created.isoformat() if created else None
 
         data.append(
             {
                 "id": app.id,
-                "name": getattr(app, "full_name", "") or getattr(app, "name", ""),
-                "zip_code": getattr(app, "zip_code", "") or getattr(app, "zip", ""),
-                "address": getattr(app, "address", ""),
+                "name": (getattr(app, "full_name", "") or "").strip(),
+                "zip_code": (getattr(app, "zip_code", "") or "").strip(),
+                "address": (getattr(app, "address", "") or "").strip(),
                 "created": created_iso,
                 "admin_url": (
                     f"/django-admin/booking_app/newclientapplication/"
@@ -382,3 +412,23 @@ def pending_applications(request):
         )
 
     return JsonResponse(data, safe=False)
+
+
+@staff_member_required
+@require_POST
+def application_action(request, app_id):
+    app = get_object_or_404(NewClientApplication, id=app_id)
+
+    action = (request.POST.get("action") or "").strip().lower()
+    if action not in {"approve", "decline"}:
+        return JsonResponse({"ok": False, "error": "bad_action"}, status=400)
+
+    if action == "approve":
+        _ensure_client_from_application(app)
+        app.status = "approved"
+    else:
+        app.status = "declined"
+
+    app.save(update_fields=["status"])
+
+    return JsonResponse({"ok": True, "status": app.status})

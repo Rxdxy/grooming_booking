@@ -1,0 +1,356 @@
+
+
+{% extends "booking_app/base.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="fw-bold mb-0">Applications</h2>
+    <a href="{% url 'calendar_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+      Back to calendar
+    </a>
+  </div>
+
+  <div class="section-card">
+    <div class="small text-muted mb-3">
+      Pending, approved, and declined applications. Use this page as a full
+      reference. Approvals are handled from the dashboard.
+    </div>
+
+    <div class="list-group" id="applicationsList">
+      <div class="text-muted small">Loading applications…</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .section-card {
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
+  }
+
+  .app-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .app-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .btn-mini {
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .btn-approve {
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    color: rgba(17, 24, 39, 0.95);
+  }
+
+  .btn-approve:hover {
+    background: rgba(34, 197, 94, 0.18);
+    border-color: rgba(34, 197, 94, 0.45);
+  }
+
+  .btn-decline {
+    background: rgba(239, 68, 68, 0.10);
+    border: 1px solid rgba(239, 68, 68, 0.30);
+    color: rgba(17, 24, 39, 0.95);
+  }
+
+  .btn-decline:hover {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(239, 68, 68, 0.40);
+  }
+
+  .btn-copy {
+    background: rgba(59, 130, 246, 0.10);
+    border: 1px solid rgba(59, 130, 246, 0.30);
+    color: rgba(17, 24, 39, 0.95);
+  }
+
+  .btn-copy:hover {
+    background: rgba(59, 130, 246, 0.16);
+    border-color: rgba(59, 130, 246, 0.40);
+  }
+
+  .copy-inline {
+    margin-top: 10px;
+  }
+
+  .copy-inline input {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.85);
+  }
+
+  .app-status {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .status-pending {
+    background: rgba(234, 179, 8, 0.15);
+    color: rgba(113, 63, 18, 0.95);
+  }
+
+  .status-approved {
+    background: rgba(34, 197, 94, 0.15);
+    color: rgba(22, 101, 52, 0.95);
+  }
+
+  .status-declined {
+    background: rgba(239, 68, 68, 0.15);
+    color: rgba(127, 29, 29, 0.95);
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const listEl = document.getElementById("applicationsList");
+
+    function getCookie(name) {
+      const v = document.cookie || "";
+      const parts = v.split(";");
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i].trim();
+        if (p.startsWith(name + "=")) {
+          return decodeURIComponent(p.substring(name.length + 1));
+        }
+      }
+      return "";
+    }
+
+    async function postAppAction(appId, action) {
+      const csrf = getCookie("csrftoken");
+      const url = `/api/application/${appId}/action/`;
+
+      const body = new URLSearchParams();
+      body.set("action", action);
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          "X-CSRFToken": csrf,
+        },
+        body: body.toString(),
+      });
+
+      if (!res.ok) return { ok: false };
+
+      try {
+        return await res.json();
+      } catch (e) {
+        return { ok: false };
+      }
+    }
+
+    async function tryCopy(text) {
+      const t = (text || "").trim();
+      if (!t) return false;
+
+      try {
+        await navigator.clipboard.writeText(t);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function showCopyField(container, text) {
+      const existing = container.querySelector(".copy-inline");
+      if (existing) {
+        existing.remove();
+        return;
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "copy-inline";
+
+      wrap.innerHTML = `
+        <div class="small text-muted mb-1">Copy address</div>
+        <input type="text" value="${(text || "").replace(/"/g, "&quot;")}" readonly />
+      `;
+
+      container.appendChild(wrap);
+
+      const input = wrap.querySelector("input");
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }
+
+    function statusPill(status) {
+      const s = (status || "pending").toLowerCase();
+      const safe = s === "approved" || s === "declined" ? s : "pending";
+      return `<div class="app-status status-${safe}">${safe}</div>`;
+    }
+
+    function escapeHtml(text) {
+      return (text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    try {
+      const res = await fetch("/api/pending-applications/?all=1", {
+        headers: { "Accept": "application/json" },
+      });
+
+      if (!res.ok) throw new Error("fetch_failed");
+
+      const apps = await res.json();
+      listEl.innerHTML = "";
+
+      if (!apps.length) {
+        listEl.innerHTML = '<div class="text-muted small">No applications.</div>';
+        return;
+      }
+
+      apps.forEach((a) => {
+        const item = document.createElement("div");
+        item.className = "list-group-item";
+
+        const appId = a.id;
+        const name = escapeHtml(a.name || "Application");
+        const addr = (a.address || "").trim();
+        const addrSafe = escapeHtml(addr);
+        const zip = a.zip_code ? `ZIP ${escapeHtml(a.zip_code)}` : "";
+        const when = a.created ? new Date(a.created).toLocaleString() : "";
+        const whenSafe = escapeHtml(when);
+        const status = (a.status || "pending").toLowerCase();
+
+        const meta = [addrSafe, zip, whenSafe].filter(Boolean).join(" · ");
+
+        const isPending = status === "pending";
+
+        const actionsHtml = isPending
+          ? `
+            <div class="app-actions">
+              <button
+                type="button"
+                class="btn-mini btn-approve"
+                data-action="approve"
+              >
+                Approve
+              </button>
+              <button
+                type="button"
+                class="btn-mini btn-decline"
+                data-action="decline"
+              >
+                Decline
+              </button>
+              <button
+                type="button"
+                class="btn-mini btn-copy"
+                data-action="copy"
+              >
+                Copy address
+              </button>
+            </div>
+          `
+          : `
+            <div class="app-actions">
+              <button
+                type="button"
+                class="btn-mini btn-copy"
+                data-action="copy"
+              >
+                Copy address
+              </button>
+              ${statusPill(status)}
+            </div>
+          `;
+
+        item.innerHTML = `
+          <div class="app-item" data-app-id="${appId}">
+            <div>
+              <div class="fw-semibold">${name}</div>
+              <div class="small text-muted">${meta}</div>
+            </div>
+            ${actionsHtml}
+          </div>
+        `;
+
+        item.addEventListener("click", (ev) => {
+          const btn = ev.target.closest("button[data-action]");
+          if (!btn) return;
+          ev.preventDefault();
+          ev.stopPropagation();
+
+          const action = btn.getAttribute("data-action");
+          const root = item.querySelector(".app-item");
+          const actions = item.querySelector(".app-actions");
+
+          if (action === "copy") {
+            (async () => {
+              const ok = await tryCopy(addr);
+              if (!ok) {
+                showCopyField(item, addr);
+              }
+            })();
+            return;
+          }
+
+          if (!appId || (action !== "approve" && action !== "decline")) return;
+
+          btn.disabled = true;
+
+          (async () => {
+            const resp = await postAppAction(appId, action);
+            if (!resp || !resp.ok) {
+              btn.disabled = false;
+              window.alert("Could not update application. Try again.");
+              return;
+            }
+
+            const newStatus = (resp.status || "pending").toLowerCase();
+
+            // Re-render actions area after decision
+            if (actions) {
+              actions.innerHTML = `
+                <button
+                  type="button"
+                  class="btn-mini btn-copy"
+                  data-action="copy"
+                >
+                  Copy address
+                </button>
+                ${statusPill(newStatus)}
+              `;
+            }
+          })();
+        });
+
+        listEl.appendChild(item);
+      });
+    } catch (e) {
+      listEl.innerHTML = '<div class="text-danger small">Failed to load applications.</div>';
+    }
+  });
+</script>
+{% endblock %}

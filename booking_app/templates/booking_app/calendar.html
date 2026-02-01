@@ -6,15 +6,68 @@
   <div class="col-12 col-lg-10">
     <div class="card-soft p-3 p-md-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
           <h1 class="h3 mb-1">Nazar’s Calendar</h1>
+          <span class="time-badge">Chicago time</span>
         </div>
       </div>
 
       <div id="calendar"></div>
 
+      <div class="stats-row" aria-label="Dashboard counts">
+        <div class="stats-pill">
+          <span class="stats-label">Today</span>
+          <span class="stats-value" id="todayBookingCount">0</span>
+          <span class="stats-suffix">bookings</span>
+        </div>
+        <div class="stats-pill">
+          <span class="stats-label">Pending</span>
+          <span class="stats-value" id="pendingAppCount">0</span>
+          <span class="stats-suffix">applications</span>
+        </div>
+      </div>
+
+      <div id="detailCard" class="detail-card d-none" aria-live="polite">
+        <div class="detail-header">
+          <div>
+            <div class="detail-title" id="detailTitle">Booking</div>
+            <div class="detail-sub" id="detailWhen"></div>
+          </div>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            id="detailClose"
+            aria-label="Close details"
+          >
+            Close
+          </button>
+        </div>
+
+        <div class="detail-body">
+          <div class="detail-line">
+            <span class="detail-label">Address</span>
+            <span class="detail-value" id="detailAddress"></span>
+          </div>
+        </div>
+
+        <div class="detail-actions">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            id="detailCopy"
+          >
+            Copy address
+          </button>
+          <a class="btn btn-accent" href="/bookings/" id="detailOpenBookings">
+            Open bookings
+          </a>
+        </div>
+      </div>
+
       <div class="d-flex flex-wrap gap-2 justify-content-end mt-3 mb-3">
-        <a class="btn btn-accent" href="/book/?admin=1">Create booking</a>
+        <a class="btn btn-accent" id="createBookingBtn" href="/book/?admin=1">
+          Create booking
+        </a>
         <a class="btn btn-outline-secondary" href="/bookings/">
           View booking list
         </a>
@@ -28,26 +81,6 @@
         </a>
       </div>
 
-      <div class="mt-4 section-card">
-        <button
-          type="button"
-          class="section-toggle"
-          id="toggleBookings"
-          aria-expanded="true"
-        >
-          <span class="section-title">Upcoming bookings</span>
-          <span class="small text-muted" id="bookingCount"></span>
-          <span class="section-caret" aria-hidden="true">▾</span>
-        </button>
-
-        <div id="bookingSection">
-          <div class="list-group" id="bookingList"></div>
-        </div>
-      </div>
-
-      <p class="text-muted small mt-3 mb-0">
-        Tip: Tap a booking to reveal actions like Copy address.
-      </p>
 
       <div class="mt-4 section-card">
         <button
@@ -64,7 +97,7 @@
         <div id="appSection">
           <div class="list-group" id="appList"></div>
           <div class="small text-muted mt-2">
-            Pending only. Tap to open in admin.
+            Pending only. Approve or decline here. Admin is optional.
           </div>
         </div>
       </div>
@@ -73,81 +106,48 @@
 </div>
 
 <style>
-  .list-group-item.is-today {
-    border-left: 5px solid #f6c453;
-    background: rgba(246, 196, 83, 0.14);
-  }
 
-  .booking-row {
-    padding: 0;
-    overflow: hidden;
-  }
-
-  .booking-swipe {
-    position: relative;
-    width: 100%;
-    min-height: 64px;
-  }
-
-  .booking-front {
-    position: relative;
-    z-index: 2;
-    padding: 12px 16px;
-    background: inherit;
-    transition: transform 200ms ease;
-  }
-
-  .booking-actions {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
+  .time-badge {
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    z-index: 1;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 160ms ease;
-  }
-
-  .booking-row.is-open .booking-front {
-    transform: translateX(-148px);
-  }
-
-  .booking-row.is-open .booking-actions {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .booking-actions .btn {
-    white-space: nowrap;
-  }
-
-  .copy-feedback {
-    margin-left: 10px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(246, 196, 83, 0.22);
+    border: 1px solid rgba(246, 196, 83, 0.45);
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(17, 24, 39, 0.85);
   }
 
   /* Collapsible section header tile */
   .section-card {
-    background: rgba(255, 255, 255, 0.45);
-    border-radius: 16px;
-    padding: 10px;
-    box-shadow: 0 8px 22px rgba(16, 24, 40, 0.08);
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(17, 24, 39, 0.06);
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 10px 26px rgba(16, 24, 40, 0.10);
+    transition:
+      transform 140ms ease,
+      box-shadow 140ms ease,
+      background 140ms ease;
+  }
+
+  .section-card:hover {
+    background: rgba(255, 255, 255, 0.62);
+    box-shadow: 0 12px 30px rgba(16, 24, 40, 0.12);
   }
 
   .section-toggle {
     width: 100%;
     border: 0;
-    background: rgba(255, 255, 255, 0.65);
-    border-radius: 14px;
-    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.72);
+    border-radius: 16px;
+    padding: 14px 14px;
     display: flex;
     align-items: center;
     gap: 10px;
     text-align: left;
-    box-shadow: 0 2px 10px rgba(16, 24, 40, 0.06);
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.07);
   }
 
   .section-toggle:hover {
@@ -176,9 +176,9 @@
     transform: rotate(-90deg);
   }
 
-  #bookingSection,
   #appSection {
-    margin-top: 10px;
+    margin-top: 12px;
+    padding: 2px;
   }
 
   .section-card .list-group-item {
@@ -188,6 +188,181 @@
 
   .section-card .list-group-item:last-child {
     margin-bottom: 0;
+  }
+
+  .app-row {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .app-meta {
+    margin-top: 2px;
+  }
+
+  .app-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    min-width: 120px;
+  }
+
+  .app-actions .btn {
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .app-actions .btn-approve {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.35);
+    color: rgba(17, 24, 39, 0.95);
+  }
+
+  .app-actions .btn-approve:hover {
+    background: rgba(34, 197, 94, 0.18);
+    border-color: rgba(34, 197, 94, 0.45);
+  }
+
+  .app-actions .btn-decline {
+    background: rgba(239, 68, 68, 0.10);
+    border-color: rgba(239, 68, 68, 0.30);
+    color: rgba(17, 24, 39, 0.95);
+  }
+
+  .app-actions .btn-decline:hover {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(239, 68, 68, 0.40);
+  }
+
+  .app-admin-link {
+    font-size: 12px;
+    color: rgba(17, 24, 39, 0.60);
+    text-decoration: none;
+  }
+
+  .app-admin-link:hover {
+    text-decoration: underline;
+  }
+
+  /* FullCalendar: make today more obvious in month view */
+  .fc .fc-daygrid-day.fc-day-today {
+    background: rgba(246, 196, 83, 0.18);
+  }
+
+  .fc .fc-daygrid-day.fc-day-today {
+    outline: 2px solid rgba(246, 196, 83, 0.55);
+    outline-offset: -2px;
+    border-radius: 10px;
+  }
+
+  .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    background: rgba(246, 196, 83, 0.90);
+    color: rgba(17, 24, 39, 0.95);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-weight: 700;
+  }
+
+  .fc .fc-toolbar-title {
+    letter-spacing: -0.01em;
+  }
+
+  .detail-card {
+    margin-top: 14px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 10px 26px rgba(16, 24, 40, 0.10);
+  }
+
+  .detail-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .detail-title {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .detail-sub {
+    margin-top: 2px;
+    font-size: 13px;
+    color: rgba(17, 24, 39, 0.65);
+  }
+
+  .detail-body {
+    margin-top: 10px;
+  }
+
+  .detail-line {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .detail-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(17, 24, 39, 0.70);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .detail-value {
+    font-size: 14px;
+    color: rgba(17, 24, 39, 0.90);
+    word-break: break-word;
+  }
+
+  .detail-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .stats-row {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .stats-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.70);
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08);
+  }
+
+  .stats-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(17, 24, 39, 0.60);
+  }
+
+  .stats-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: rgba(17, 24, 39, 0.92);
+  }
+
+  .stats-suffix {
+    font-size: 13px;
+    color: rgba(17, 24, 39, 0.65);
   }
 </style>
 
@@ -202,10 +377,22 @@
 <script>
   document.addEventListener("DOMContentLoaded", async function () {
     const el = document.getElementById("calendar");
-    const listEl = document.getElementById("bookingList");
-    const countEl = document.getElementById("bookingCount");
     const appListEl = document.getElementById("appList");
     const appCountEl = document.getElementById("appCount");
+    const todayCountEl = document.getElementById("todayBookingCount");
+    const pendingCountEl = document.getElementById("pendingAppCount");
+
+    const createBtn = document.getElementById("createBookingBtn");
+
+    const detailCard = document.getElementById("detailCard");
+    const detailTitle = document.getElementById("detailTitle");
+    const detailWhen = document.getElementById("detailWhen");
+    const detailAddress = document.getElementById("detailAddress");
+    const detailCopy = document.getElementById("detailCopy");
+    const detailClose = document.getElementById("detailClose");
+
+    let selectedStart = null;
+    let selectedEnd = null;
 
     function fmtChicago(iso) {
       try {
@@ -264,7 +451,6 @@
       calendar.changeView("timeGridDay");
       calendar.gotoDate(iso);
 
-      // Scroll to the time (works in timeGrid views)
       const t = timeOnly(iso);
       if (t && typeof calendar.scrollToTime === "function") {
         const hhmm = new Date(iso).toISOString().slice(11, 16);
@@ -293,9 +479,8 @@
         } catch (e) {
           return fallbackCopy(text);
         }
-      } else {
-        return fallbackCopy(text);
       }
+      return fallbackCopy(text);
     }
 
     function fallbackCopy(text) {
@@ -312,7 +497,6 @@
 
       document.body.appendChild(ta);
 
-      // Focus + select is required for execCommand copy.
       ta.focus({ preventScroll: true });
       ta.select();
       ta.setSelectionRange(0, ta.value.length);
@@ -328,6 +512,102 @@
       return ok;
     }
 
+    function getCookie(name) {
+      const v = document.cookie || "";
+      const parts = v.split(";");
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i].trim();
+        if (p.startsWith(name + "=")) {
+          return decodeURIComponent(p.substring(name.length + 1));
+        }
+      }
+      return "";
+    }
+
+    async function postAppAction(appId, action) {
+      const csrf = getCookie("csrftoken");
+      const url = `/api/application/${appId}/action/`;
+
+      const body = new URLSearchParams();
+      body.set("action", action);
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          "X-CSRFToken": csrf,
+        },
+        body: body.toString(),
+      });
+
+      if (!res.ok) {
+        return { ok: false };
+      }
+
+      try {
+        return await res.json();
+      } catch (e) {
+        return { ok: false };
+      }
+    }
+
+    function toIsoLocal(d) {
+      try {
+        return d.toISOString();
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function addHours(d, hours) {
+      const x = new Date(d.getTime());
+      x.setHours(x.getHours() + hours);
+      return x;
+    }
+
+    function updateCreateLink() {
+      if (!createBtn) return;
+
+      if (!selectedStart) {
+        createBtn.href = "/book/?admin=1";
+        return;
+      }
+
+      const s = encodeURIComponent(toIsoLocal(selectedStart));
+      const e = encodeURIComponent(toIsoLocal(selectedEnd));
+      createBtn.href = `/book/?admin=1&slot_start=${s}&slot_end=${e}`;
+    }
+
+    function showDetails(title, startIso, endIso, address) {
+      if (!detailCard) return;
+
+      if (detailTitle) {
+        detailTitle.textContent = title || "Booking";
+      }
+
+      if (detailWhen) {
+        if (startIso) {
+          const startTxt = fmtChicago(startIso);
+          const endTxt = endIso ? timeOnly(endIso) : "";
+          detailWhen.textContent = endTxt ? `${startTxt} – ${endTxt}` : startTxt;
+        } else {
+          detailWhen.textContent = "";
+        }
+      }
+
+      if (detailAddress) {
+        detailAddress.textContent = address || "No address";
+      }
+
+      detailCard.classList.remove("d-none");
+      detailCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function hideDetails() {
+      if (!detailCard) return;
+      detailCard.classList.add("d-none");
+    }
 
     let data = [];
     try {
@@ -339,7 +619,6 @@
       data = [];
     }
 
-    // Sort by start time
     data.sort((a, b) => {
       const as = a.start || "";
       const bs = b.start || "";
@@ -357,132 +636,43 @@
       },
       events: data,
       dateClick: function (info) {
-        // In month view, clicking a day opens that day.
         calendar.changeView("timeGridDay");
         calendar.gotoDate(info.dateStr);
+
+        selectedStart = info.date;
+        selectedEnd = addHours(info.date, 1);
+        updateCreateLink();
       },
       eventClick: function (info) {
         info.jsEvent.preventDefault();
-        jumpTo(calendar, info.event.startStr);
+
+        const title = info.event.title || "Booking";
+        const startIso = info.event.startStr || "";
+        const endIso = info.event.endStr || "";
+        const addr = (info.event.extendedProps
+          && info.event.extendedProps.address)
+          ? info.event.extendedProps.address
+          : "";
+
+        showDetails(title, startIso, endIso, addr);
       },
     });
 
     calendar.render();
 
-    // Build the bottom list
-    if (countEl) {
-      countEl.textContent = data.length ? `${data.length} total` : "";
-    }
+    selectedStart = new Date();
+    selectedEnd = addHours(selectedStart, 1);
+    updateCreateLink();
 
-    if (listEl) {
-      listEl.innerHTML = "";
-
-      const now = new Date();
-      const upcoming = data.filter((e) => {
+    if (todayCountEl) {
+      const todayKey = chicagoDayKey(new Date());
+      const todayBookings = data.filter((e) => {
         if (!e.start) return false;
-        return new Date(e.start) >= now;
-      });
-      upcoming.slice(0, 30).forEach((e) => {
-        const btn = document.createElement("div");
-        btn.className = "list-group-item list-group-item-action booking-row";
-
-        const todayKey = chicagoDayKey(new Date());
-        const itemKey = chicagoDayKey(e.start);
-
-        if (itemKey === todayKey) {
-          btn.classList.add("is-today");
-        }
-
-        btn.dataset.iso = e.start;
-        const addr = e.address || "";
-        btn.dataset.address = addr;
-
-        const when = fmtChicago(e.start);
-        const title = e.title || "Booking";
-
-        btn.innerHTML =
-          `<div class="booking-swipe">` +
-          `<div class="booking-actions">` +
-          `<button type="button" class="btn btn-sm btn-outline-secondary" ` +
-          `data-action="copy">Copy address</button>` +
-          `<a class="btn btn-sm btn-accent" ` +
-          `href="/bookings/" data-action="all">All bookings</a>` +
-          `</div>` +
-          `<div class="booking-front">` +
-          `<div class="d-flex justify-content-between align-items-start gap-3">` +
-          `<div>` +
-          `<div class="fw-semibold">${title}</div>` +
-          `<div class="small text-muted">${when}</div>` +
-          (addr ? `<div class="small text-muted">${addr}</div>` : ``) +
-          `</div>` +
-          `</div>` +
-          `</div>` +
-          `</div>`;
-
-        btn.addEventListener("click", async (ev) => {
-          const target = ev.target;
-          const action = target && target.getAttribute
-            ? target.getAttribute("data-action")
-            : null;
-
-          if (action === "copy") {
-            ev.preventDefault();
-            ev.stopPropagation();
-
-            const text = (btn.dataset.address || "").trim();
-
-            let msg = "";
-            if (!text) {
-              msg = "No address";
-            } else {
-              const ok = await tryCopy(text);
-              msg = ok ? "Copied" : "Manual copy";
-
-              if (!ok) {
-                // Most reliable fallback when clipboard is blocked.
-                window.prompt("Copy address (Cmd+C):", text);
-              }
-            }
-
-            const feedback = document.createElement("span");
-            feedback.className = "small text-muted copy-feedback";
-            feedback.textContent = msg;
-            target.insertAdjacentElement("afterend", feedback);
-
-            window.setTimeout(() => {
-              feedback.remove();
-            }, 900);
-
-            return;
-          }
-
-          if (action === "all") {
-            ev.stopPropagation();
-            return;
-          }
-
-          const already = btn.classList.contains("is-open");
-          document.querySelectorAll(".booking-row.is-open").forEach((x) => {
-            x.classList.remove("is-open");
-          });
-
-          if (!already) {
-            btn.classList.add("is-open");
-          }
-        });
-
-        listEl.appendChild(btn);
-      });
-
-      if (!upcoming.length) {
-        const empty = document.createElement("div");
-        empty.className = "text-muted small";
-        empty.textContent = "No bookings yet.";
-        listEl.appendChild(empty);
-      }
+        return chicagoDayKey(e.start) === todayKey;
+      }).length;
+      todayCountEl.textContent = String(todayBookings);
     }
 
-    // Build the applications list (pending only)
     let apps = [];
     try {
       const resApps = await fetch("/api/pending-applications/");
@@ -497,54 +687,140 @@
       appCountEl.textContent = apps.length ? `${apps.length} pending` : "";
     }
 
+    if (pendingCountEl) {
+      pendingCountEl.textContent = String(apps.length);
+    }
+
     if (appListEl) {
       appListEl.innerHTML = "";
 
-      apps.slice(0, 30).forEach((a) => {
-        const link = document.createElement("a");
-        link.className = "list-group-item list-group-item-action";
-        link.href = a.admin_url || "#";
-        link.target = "_blank";
-        link.rel = "noopener";
+      function updatePendingCounters(newCount) {
+        if (appCountEl) {
+          appCountEl.textContent = newCount ? `${newCount} pending` : "";
+        }
+        if (pendingCountEl) {
+          pendingCountEl.textContent = String(newCount);
+        }
+      }
 
-        const name = a.name || "Application";
-        const zip = a.zip_code ? `ZIP ${a.zip_code}` : "";
-        const addr = a.address || "";
-        const when = a.created ? fmtChicago(a.created) : "";
-
-        const meta = [addr, zip, when].filter(Boolean).join(" · ");
-
-        link.innerHTML =
-          `<div class="d-flex justify-content-between align-items-start gap-3">` +
-          `<div>` +
-          `<div class="fw-semibold">${name}</div>` +
-          `<div class="small text-muted">${meta}</div>` +
-          `</div>` +
-          `<div class="small text-muted">Admin</div>` +
-          `</div>`;
-
-        appListEl.appendChild(link);
-      });
-
-      if (!apps.length) {
+      function renderEmptyApps() {
+        appListEl.innerHTML = "";
         const emptyA = document.createElement("div");
         emptyA.className = "text-muted small";
         emptyA.textContent = "No pending applications.";
         appListEl.appendChild(emptyA);
       }
+
+      apps.slice(0, 30).forEach((a) => {
+        const item = document.createElement("div");
+        item.className = "list-group-item";
+        item.dataset.appId = String(a.id || "");
+
+        const name = a.name || "Application";
+        const zip = a.zip_code ? `ZIP ${a.zip_code}` : "";
+        const addr = a.address || "";
+        const when = a.created ? fmtChicago(a.created) : "";
+        const meta = [addr, zip, when].filter(Boolean).join(" · ");
+
+        const adminUrl = a.admin_url || "";
+        const adminHtml = adminUrl
+          ? `<a class="app-admin-link" href="${adminUrl}" target="_blank" rel="noopener">Admin</a>`
+          : "";
+
+        item.innerHTML =
+          `<div class="app-row">`
+          +
+          `<div>`
+          +
+          `<div class="fw-semibold">${name}</div>`
+          +
+          `<div class="small text-muted app-meta">${meta}</div>`
+          +
+          `${adminHtml ? `<div class="mt-1">${adminHtml}</div>` : ""}`
+          +
+          `</div>`
+          +
+          `<div class="app-actions">`
+          +
+          `<button type="button" class="btn btn-sm btn-outline-secondary btn-approve" data-action="approve">Approve</button>`
+          +
+          `<button type="button" class="btn btn-sm btn-outline-secondary btn-decline" data-action="decline">Decline</button>`
+          +
+          `</div>`
+          +
+          `</div>`;
+
+        item.addEventListener("click", (ev) => {
+          const btn = ev.target.closest("button[data-action]");
+          if (!btn) return;
+          ev.preventDefault();
+          ev.stopPropagation();
+
+          const appId = item.dataset.appId;
+          const action = (btn.getAttribute("data-action") || "").trim();
+          if (!appId || !action) return;
+
+          btn.disabled = true;
+
+          (async () => {
+            const resp = await postAppAction(appId, action);
+            if (!resp || !resp.ok) {
+              btn.disabled = false;
+              window.alert("Could not update application. Try again.");
+              return;
+            }
+
+            // Remove from local list + UI
+            apps = apps.filter((x) => String(x.id) !== String(appId));
+            item.remove();
+
+            updatePendingCounters(apps.length);
+
+            if (!apps.length) {
+              renderEmptyApps();
+            }
+          })();
+        });
+
+        appListEl.appendChild(item);
+      });
+
+      if (!apps.length) {
+        renderEmptyApps();
+      }
     }
 
-    // Toggle booking section
-    const toggleBookings = document.getElementById("toggleBookings");
-    const bookingSection = document.getElementById("bookingSection");
-    if (toggleBookings && bookingSection) {
-      toggleBookings.addEventListener("click", () => {
-        const expanded = toggleBookings.getAttribute("aria-expanded") === "true";
-        setExpanded(toggleBookings, bookingSection, !expanded);
+    if (detailClose) {
+      detailClose.addEventListener("click", () => {
+        hideDetails();
       });
     }
 
-    // Toggle applications section
+    if (detailCopy) {
+      detailCopy.addEventListener("click", async () => {
+        const text = detailAddress ? (detailAddress.textContent || "").trim() : "";
+        if (!text || text === "No address") return;
+
+        const ok = await tryCopy(text);
+        if (!ok) {
+          window.prompt("Copy address (Cmd+C):", text);
+        }
+      });
+    }
+
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "b" || ev.key === "B") {
+        if (createBtn) {
+          createBtn.click();
+        }
+      }
+
+      if (ev.key === "Escape") {
+        hideDetails();
+      }
+    });
+
+
     const toggleApps = document.getElementById("toggleApps");
     const appSection = document.getElementById("appSection");
     if (toggleApps && appSection) {
