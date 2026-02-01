@@ -41,75 +41,206 @@
       </form>
 
       {% if bookings %}
-        <div class="list-group" id="bookingListPage">
-          {% for b in bookings %}
+        <div id="bookingListPage">
+          <div class="sub-tile" id="confirmedTile">
             <div
-              class="list-group-item booking-row"
-              data-address="{% if b.address %}{{ b.address|escape }}{% else %}{{ b.client.address|default:''|escape }}{% endif %}"
+              class="sub-tile-head"
+              id="confirmedHead"
+              role="button"
+              tabindex="0"
             >
-              <div class="booking-swipe">
-                <div class="booking-actions">
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-secondary"
-                    data-action="copy"
-                  >
-                    Copy address
-                  </button>
-                  <a
-                    class="btn btn-sm btn-accent"
-                    href="/django-admin/booking_app/bookingrequest/{{ b.id }}/change/"
-                    target="_blank"
-                    rel="noopener"
-                    data-action="open"
-                  >
-                    Open
-                  </a>
-                </div>
-
-                <div class="booking-front">
-                  <div
-                    class="d-flex justify-content-between align-items-start gap-3"
-                  >
-                    <div>
-                      <div class="fw-semibold">
-                        {{ b.client.full_name }} · {{ b.pet_name }}
-                      </div>
-
-                      <div class="small text-muted">
-                        {% if b.scheduled_start %}
-                          {{ b.scheduled_start }}
-                        {% else %}
-                          Requested time not set
-                        {% endif %}
-                        {% if b.scheduled_end %}
-                          – {{ b.scheduled_end|time:"P" }}
-                        {% endif %}
-                      </div>
-
-                      <div class="small text-muted">
-                        {% if b.address %}
-                          {{ b.address }}
-                        {% else %}
-                          {{ b.client.address }}
-                        {% endif %}
-                      </div>
-
-                      <div class="small text-muted">
-                        {% for s in b.services.all %}
-                          {{ s.name }}{% if not forloop.last %}, {% endif %}
-                        {% endfor %}
-                      </div>
-                    </div>
-
-                    <span class="badge rounded-pill text-bg-light">
-                      {{ b.status }}
-                    </span>
-                  </div>
-                </div>
+              <div class="sub-tile-title">Confirmed bookings</div>
+              <div class="sub-tile-meta">
+                <span class="count-badge" id="confirmedCount">0</span>
+                <span
+                  class="caret"
+                  id="confirmedCaret"
+                  aria-expanded="true"
+                >
+                  ⌄
+                </span>
               </div>
             </div>
-          {% endfor %}
+            <div class="mt-2" id="confirmedList">
+              <div class="list-group">
+                {% for b in bookings %}
+                  {% if b.status == "confirmed" %}
+                    <div
+                      class="list-group-item booking-row"
+                      data-address="{% if b.address %}{{ b.address|escape }}{% else %}{{ b.client.address|default:''|escape }}{% endif %}"
+                    >
+                      <div class="booking-swipe">
+                        <div class="booking-actions">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            data-action="copy"
+                          >
+                            Copy address
+                          </button>
+                          <a
+                            class="btn btn-sm btn-accent"
+                            href="/django-admin/booking_app/bookingrequest/{{ b.id }}/change/"
+                            target="_blank"
+                            rel="noopener"
+                            data-action="open"
+                          >
+                            Open
+                          </a>
+                        </div>
+
+                        <div class="booking-front">
+                          <div
+                            class="d-flex justify-content-between align-items-start gap-3"
+                          >
+                            <div>
+                              <div class="fw-semibold">
+                                {{ b.client.full_name }} · {{ b.pet_name }}
+                              </div>
+
+                              <div class="small text-muted">
+                                {% if b.scheduled_start %}
+                                  {{ b.scheduled_start }}
+                                {% else %}
+                                  Requested time not set
+                                {% endif %}
+                                {% if b.scheduled_end %}
+                                  – {{ b.scheduled_end|time:"P" }}
+                                {% endif %}
+                              </div>
+
+                              <div class="small text-muted">
+                                {% if b.address %}
+                                  {{ b.address }}
+                                {% else %}
+                                  {{ b.client.address }}
+                                {% endif %}
+                              </div>
+
+                              <div class="small text-muted">
+                                {% for s in b.services.all %}
+                                  {{ s.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                              </div>
+                            </div>
+
+                            <span
+                              class="badge rounded-pill status-pill status-confirmed"
+                            >
+                              {{ b.status }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <div class="text-muted small d-none" id="confirmedEmpty">
+                No confirmed bookings.
+              </div>
+            </div>
+          </div>
+
+          <div class="sub-tile" id="declinedTile">
+            <div
+              class="sub-tile-head"
+              id="declinedHead"
+              role="button"
+              tabindex="0"
+            >
+              <div class="sub-tile-title">Declined bookings</div>
+              <div class="sub-tile-meta">
+                <span class="count-badge" id="declinedCount">0</span>
+                <span
+                  class="caret"
+                  id="declinedCaret"
+                  aria-expanded="true"
+                >
+                  ⌄
+                </span>
+              </div>
+            </div>
+            <div class="mt-2" id="declinedList">
+              <div class="list-group">
+                {% for b in bookings %}
+                  {% if b.status == "declined" %}
+                    <div
+                      class="list-group-item booking-row"
+                      data-address="{% if b.address %}{{ b.address|escape }}{% else %}{{ b.client.address|default:''|escape }}{% endif %}"
+                    >
+                      <div class="booking-swipe">
+                        <div class="booking-actions">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            data-action="copy"
+                          >
+                            Copy address
+                          </button>
+                          <a
+                            class="btn btn-sm btn-accent"
+                            href="/django-admin/booking_app/bookingrequest/{{ b.id }}/change/"
+                            target="_blank"
+                            rel="noopener"
+                            data-action="open"
+                          >
+                            Open
+                          </a>
+                        </div>
+
+                        <div class="booking-front">
+                          <div
+                            class="d-flex justify-content-between align-items-start gap-3"
+                          >
+                            <div>
+                              <div class="fw-semibold">
+                                {{ b.client.full_name }} · {{ b.pet_name }}
+                              </div>
+
+                              <div class="small text-muted">
+                                {% if b.scheduled_start %}
+                                  {{ b.scheduled_start }}
+                                {% else %}
+                                  Requested time not set
+                                {% endif %}
+                                {% if b.scheduled_end %}
+                                  – {{ b.scheduled_end|time:"P" }}
+                                {% endif %}
+                              </div>
+
+                              <div class="small text-muted">
+                                {% if b.address %}
+                                  {{ b.address }}
+                                {% else %}
+                                  {{ b.client.address }}
+                                {% endif %}
+                              </div>
+
+                              <div class="small text-muted">
+                                {% for s in b.services.all %}
+                                  {{ s.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                              </div>
+                            </div>
+
+                            <span
+                              class="badge rounded-pill status-pill status-declined"
+                            >
+                              {{ b.status }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <div class="text-muted small d-none" id="declinedEmpty">
+                No declined bookings.
+              </div>
+            </div>
+          </div>
         </div>
       {% else %}
         <div class="text-muted">No bookings found.</div>
@@ -119,6 +250,77 @@
 </div>
 
 <style>
+  .sub-tile {
+    background: rgba(255, 255, 255, 0.60);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 8px 20px rgba(16, 24, 40, 0.06);
+    margin-top: 12px;
+  }
+
+  .sub-tile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .sub-tile-title {
+    font-weight: 800;
+    font-size: 14px;
+  }
+
+  .sub-tile-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .count-badge {
+    font-size: 12px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(17, 24, 39, 0.08);
+    color: rgba(17, 24, 39, 0.85);
+  }
+
+  .caret {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(17, 24, 39, 0.06);
+    color: rgba(17, 24, 39, 0.8);
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .caret[aria-expanded="false"] {
+    transform: rotate(-90deg);
+  }
+
+  .status-pill {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 800;
+  }
+
+  .status-confirmed {
+    background: rgba(34, 197, 94, 0.16);
+    color: rgba(22, 101, 52, 0.95);
+    border: 1px solid rgba(34, 197, 94, 0.30);
+  }
+
+  .status-declined {
+    background: rgba(239, 68, 68, 0.14);
+    color: rgba(127, 29, 29, 0.95);
+    border: 1px solid rgba(239, 68, 68, 0.28);
+  }
   .booking-row {
     padding: 0;
     overflow: hidden;
@@ -240,7 +442,59 @@
     }
 
     const list = document.getElementById("bookingListPage");
+    const confirmedHead = document.getElementById("confirmedHead");
+    const declinedHead = document.getElementById("declinedHead");
+    const confirmedCaret = document.getElementById("confirmedCaret");
+    const declinedCaret = document.getElementById("declinedCaret");
+    const confirmedList = document.getElementById("confirmedList");
+    const declinedList = document.getElementById("declinedList");
+    const confirmedCount = document.getElementById("confirmedCount");
+    const declinedCount = document.getElementById("declinedCount");
+    const confirmedEmpty = document.getElementById("confirmedEmpty");
+    const declinedEmpty = document.getElementById("declinedEmpty");
+
+    function wireToggle(headEl, caretEl, bodyEl) {
+      if (!headEl || !caretEl || !bodyEl) return;
+
+      function toggle() {
+        const isHidden = bodyEl.classList.toggle("d-none");
+        caretEl.setAttribute("aria-expanded", isHidden ? "false" : "true");
+      }
+
+      headEl.addEventListener("click", toggle);
+      headEl.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          toggle();
+        }
+      });
+    }
+
+    wireToggle(confirmedHead, confirmedCaret, confirmedList);
+    wireToggle(declinedHead, declinedCaret, declinedList);
+
     if (!list) return;
+
+    const confirmedRows = confirmedList
+      ? confirmedList.querySelectorAll(".booking-row")
+      : [];
+    const declinedRows = declinedList
+      ? declinedList.querySelectorAll(".booking-row")
+      : [];
+
+    const cCount = confirmedRows.length;
+    const dCount = declinedRows.length;
+
+    if (confirmedCount) confirmedCount.textContent = String(cCount);
+    if (declinedCount) declinedCount.textContent = String(dCount);
+
+    if (confirmedEmpty) {
+      confirmedEmpty.classList.toggle("d-none", cCount !== 0);
+    }
+
+    if (declinedEmpty) {
+      declinedEmpty.classList.toggle("d-none", dCount !== 0);
+    }
 
     const search = document.getElementById("bookingSearch");
     const menu = document.getElementById("bookingTypeahead");
