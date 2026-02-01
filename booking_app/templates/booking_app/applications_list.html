@@ -11,8 +11,7 @@
 
   <div class="section-card">
     <div class="small text-muted mb-3">
-      Pending, approved, and declined applications. Use this page as a full
-      reference. Approvals are handled from the dashboard.
+      Approved applications only. This is your active client list.
     </div>
 
     <div class="list-group" id="applicationsList">
@@ -260,11 +259,16 @@
 
       if (!res.ok) throw new Error("fetch_failed");
 
-      const apps = await res.json();
+      const appsRaw = await res.json();
       listEl.innerHTML = "";
 
+      const apps = (appsRaw || []).filter((a) => {
+        const s = String(a && a.status ? a.status : "").toLowerCase();
+        return s === "approved";
+      });
+
       if (!apps.length) {
-        listEl.innerHTML = '<div class="text-muted small">No applications.</div>';
+        listEl.innerHTML = '<div class="text-muted small">No approved clients yet.</div>';
         return;
       }
 
@@ -283,46 +287,18 @@
 
         const meta = [addrSafe, zip, whenSafe].filter(Boolean).join(" · ");
 
-        const isPending = status === "pending";
-
-        const actionsHtml = isPending
-          ? `
-            <div class="app-actions">
-              <button
-                type="button"
-                class="btn-mini btn-approve"
-                data-action="approve"
-              >
-                Approve
-              </button>
-              <button
-                type="button"
-                class="btn-mini btn-decline"
-                data-action="decline"
-              >
-                Decline
-              </button>
-              <button
-                type="button"
-                class="btn-mini btn-copy"
-                data-action="copy"
-              >
-                Copy address
-              </button>
-            </div>
-          `
-          : `
-            <div class="app-actions">
-              <button
-                type="button"
-                class="btn-mini btn-copy"
-                data-action="copy"
-              >
-                Copy address
-              </button>
-              ${statusPill(status)}
-            </div>
-          `;
+        const actionsHtml = `
+          <div class="app-actions">
+            <button
+              type="button"
+              class="btn-mini btn-copy"
+              data-action="copy"
+            >
+              Copy address
+            </button>
+            ${statusPill(status)}
+          </div>
+        `;
 
         item.innerHTML = `
           <div class="app-item" data-app-id="${appId}">
@@ -353,50 +329,6 @@
             })();
             return;
           }
-
-          if (!appId || (action !== "approve" && action !== "decline")) return;
-
-          const approveBtn = item.querySelector(
-            'button[data-action="approve"]'
-          );
-          const declineBtn = item.querySelector(
-            'button[data-action="decline"]'
-          );
-
-          if (approveBtn) approveBtn.disabled = true;
-          if (declineBtn) declineBtn.disabled = true;
-
-          (async () => {
-            const resp = await postAppAction(appId, action);
-            if (!resp || !resp.ok) {
-              if (approveBtn) approveBtn.disabled = false;
-              if (declineBtn) declineBtn.disabled = false;
-              showToast("Could not update. Try again.");
-              return;
-            }
-
-            const newStatus = (resp.status || "pending").toLowerCase();
-
-            if (newStatus === "approved") {
-              showToast("Approved");
-            } else if (newStatus === "declined") {
-              showToast("Declined");
-            }
-
-            // Re-render actions area after decision
-            if (actions) {
-              actions.innerHTML = `
-                <button
-                  type="button"
-                  class="btn-mini btn-copy"
-                  data-action="copy"
-                >
-                  Copy address
-                </button>
-                ${statusPill(newStatus)}
-              `;
-            }
-          })();
         });
 
         listEl.appendChild(item);

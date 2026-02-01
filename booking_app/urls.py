@@ -39,6 +39,11 @@ urlpatterns = [
         views.application_action,
         name="application_action",
     ),
+    path(
+        "api/booking/<int:booking_id>/action/",
+        views.booking_action,
+        name="booking_action",
+    ),
     path("bookings/", views.bookings_list, name="bookings_list"),
     path("bookings_list/", views.bookings_list, name="bookings_list_legacy"),
     path(

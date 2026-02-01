@@ -45,6 +45,11 @@
 
         <div class="detail-body">
           <div class="detail-line">
+            <span class="detail-label">Status</span>
+            <span class="detail-value" id="detailStatus"></span>
+          </div>
+
+          <div class="detail-line" style="margin-top: 8px;">
             <span class="detail-label">Address</span>
             <span class="detail-value" id="detailAddress"></span>
           </div>
@@ -58,6 +63,23 @@
           >
             Copy address
           </button>
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            id="detailConfirm"
+          >
+            Confirm
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            id="detailDecline"
+          >
+            Decline
+          </button>
+
           <a class="btn btn-accent" href="/bookings/" id="detailOpenBookings">
             Open bookings
           </a>
@@ -328,6 +350,28 @@
     flex-wrap: wrap;
   }
 
+  #detailConfirm {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.35);
+    color: rgba(17, 24, 39, 0.95);
+  }
+
+  #detailConfirm:hover {
+    background: rgba(34, 197, 94, 0.18);
+    border-color: rgba(34, 197, 94, 0.45);
+  }
+
+  #detailDecline {
+    background: rgba(239, 68, 68, 0.10);
+    border-color: rgba(239, 68, 68, 0.30);
+    color: rgba(17, 24, 39, 0.95);
+  }
+
+  #detailDecline:hover {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(239, 68, 68, 0.40);
+  }
+
   .stats-row {
     margin-top: 12px;
     display: flex;
@@ -408,8 +452,14 @@
     const detailTitle = document.getElementById("detailTitle");
     const detailWhen = document.getElementById("detailWhen");
     const detailAddress = document.getElementById("detailAddress");
+    const detailStatus = document.getElementById("detailStatus");
     const detailCopy = document.getElementById("detailCopy");
+    const detailConfirm = document.getElementById("detailConfirm");
+    const detailDecline = document.getElementById("detailDecline");
     const detailClose = document.getElementById("detailClose");
+
+    let activeBookingId = "";
+    let activeBookingStatus = "";
 
     function showToast(message) {
       let wrap = document.getElementById("toastWrap");
@@ -591,6 +641,35 @@
       }
     }
 
+    async function postBookingAction(bookingId, action) {
+      const csrf = getCookie("csrftoken");
+      const url = `/api/booking/${bookingId}/action/`;
+
+      const body = new URLSearchParams();
+      body.set("action", action);
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type":
+            "application/x-www-form-urlencoded;charset=UTF-8",
+          "X-CSRFToken": csrf,
+        },
+        body: body.toString(),
+      });
+
+      if (!res.ok) {
+        return { ok: false };
+      }
+
+      try {
+        return await res.json();
+      } catch (e) {
+        return { ok: false };
+      }
+    }
+
     function toIsoLocal(d) {
       try {
         return d.toISOString();
@@ -618,7 +697,7 @@
       createBtn.href = `/book/?admin=1&slot_start=${s}&slot_end=${e}`;
     }
 
-    function showDetails(title, startIso, endIso, address) {
+    function showDetails(title, startIso, endIso, address, status) {
       if (!detailCard) return;
 
       if (detailTitle) {
@@ -635,6 +714,25 @@
         }
       }
 
+      const st = (status || "").trim() || "pending";
+      activeBookingStatus = st;
+
+      if (detailStatus) {
+        detailStatus.textContent = st;
+      }
+
+      const isFinal = st === "confirmed" || st === "declined";
+
+      if (detailConfirm) {
+        detailConfirm.disabled = isFinal;
+        detailConfirm.classList.toggle("d-none", isFinal);
+      }
+
+      if (detailDecline) {
+        detailDecline.disabled = isFinal;
+        detailDecline.classList.toggle("d-none", isFinal);
+      }
+
       if (detailAddress) {
         detailAddress.textContent = address || "No address";
       }
@@ -646,6 +744,18 @@
     function hideDetails() {
       if (!detailCard) return;
       detailCard.classList.add("d-none");
+      activeBookingId = "";
+      activeBookingStatus = "";
+
+      if (detailConfirm) {
+        detailConfirm.disabled = false;
+        detailConfirm.classList.remove("d-none");
+      }
+
+      if (detailDecline) {
+        detailDecline.disabled = false;
+        detailDecline.classList.remove("d-none");
+      }
     }
 
     let data = [];
@@ -688,12 +798,20 @@
         const title = info.event.title || "Booking";
         const startIso = info.event.startStr || "";
         const endIso = info.event.endStr || "";
-        const addr = (info.event.extendedProps
-          && info.event.extendedProps.address)
-          ? info.event.extendedProps.address
-          : "";
+        const props = info.event.extendedProps || {};
+        const addr = props.address ? props.address : "";
 
-        showDetails(title, startIso, endIso, addr);
+        const bookingId = props.booking_id
+          ? String(props.booking_id)
+          : String(info.event.id || "");
+
+        const status = props.status
+          ? String(props.status)
+          : "pending";
+
+        activeBookingId = bookingId;
+
+        showDetails(title, startIso, endIso, addr, status);
       },
     });
 
@@ -860,6 +978,49 @@
         if (!ok) {
           window.prompt("Copy address (Cmd+C):", text);
         }
+      });
+    }
+
+    async function runBookingDecision(action) {
+      if (!activeBookingId) {
+        showToast("No booking selected");
+        return;
+      }
+
+      if (detailConfirm) detailConfirm.disabled = true;
+      if (detailDecline) detailDecline.disabled = true;
+
+      const resp = await postBookingAction(activeBookingId, action);
+      if (!resp || !resp.ok) {
+        showToast("Could not update booking");
+        if (detailConfirm) detailConfirm.disabled = false;
+        if (detailDecline) detailDecline.disabled = false;
+        return;
+      }
+
+      const newStatus = String(resp.status || "").toLowerCase();
+      if (newStatus === "confirmed") {
+        showToast("Confirmed");
+      } else if (newStatus === "declined") {
+        showToast("Declined");
+      } else {
+        showToast("Updated");
+      }
+
+      window.setTimeout(() => {
+        window.location.reload();
+      }, 400);
+    }
+
+    if (detailConfirm) {
+      detailConfirm.addEventListener("click", () => {
+        runBookingDecision("confirm");
+      });
+    }
+
+    if (detailDecline) {
+      detailDecline.addEventListener("click", () => {
+        runBookingDecision("decline");
       });
     }
 

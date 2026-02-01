@@ -218,7 +218,13 @@ def booking_suggestions(request):
 
 def calendar_events(request):
     events = []
-    bookings = BookingRequest.objects.select_related("client").all()
+
+    bookings = (
+        BookingRequest.objects
+        .select_related("client")
+        .exclude(status="declined")
+        .exclude(scheduled_start__isnull=True)
+    )
 
     for booking in bookings:
         start = timezone.localtime(booking.scheduled_start)
@@ -228,20 +234,27 @@ def calendar_events(request):
             else None
         )
 
-        if start is None:
-            continue
-
         title = f"{booking.pet_name} ({booking.client.full_name})"
+
+        addr = booking.address or booking.client.address
 
         event = {
             "id": booking.id,
             "title": title,
             "start": start.isoformat(),
-            "address": booking.address or booking.client.address,
             "url": (
                 f"/django-admin/booking_app/bookingrequest/{booking.id}/change/"
             ),
+            "extendedProps": {
+                "booking_id": booking.id,
+                "status": booking.status,
+                "address": addr,
+            },
         }
+
+        # Backward compatible keys (safe if templates still reference them)
+        event["address"] = addr
+        event["status"] = booking.status
 
         if end is not None:
             event["end"] = end.isoformat()
@@ -256,6 +269,7 @@ def availability_events(request):
 
     bookings = (
         BookingRequest.objects
+        .exclude(status="declined")
         .exclude(scheduled_start__isnull=True)
         .exclude(scheduled_end__isnull=True)
     )
@@ -299,6 +313,7 @@ def availability_slots(request):
 
     busy_qs = (
         BookingRequest.objects
+        .exclude(status="declined")
         .exclude(scheduled_start__isnull=True)
         .exclude(scheduled_end__isnull=True)
         .filter(scheduled_start__lt=range_end)
@@ -432,3 +447,23 @@ def application_action(request, app_id):
     app.save(update_fields=["status"])
 
     return JsonResponse({"ok": True, "status": app.status})
+
+
+# --- Inserted booking_action view ---
+@staff_member_required
+@require_POST
+def booking_action(request, booking_id):
+    booking = get_object_or_404(BookingRequest, id=booking_id)
+
+    action = (request.POST.get("action") or "").strip().lower()
+    if action not in {"confirm", "decline"}:
+        return JsonResponse({"ok": False, "error": "bad_action"}, status=400)
+
+    if action == "confirm":
+        booking.status = "confirmed"
+    else:
+        booking.status = "declined"
+
+    booking.save(update_fields=["status"])
+
+    return JsonResponse({"ok": True, "status": booking.status})
