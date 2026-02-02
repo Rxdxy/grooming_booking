@@ -48,19 +48,23 @@ def book_request(request):
             if start_raw:
                 start_clean = start_raw.replace("Z", "")
                 start_dt = datetime.datetime.fromisoformat(start_clean)
-                start_dt = timezone.make_aware(
-                    start_dt,
-                    timezone.get_current_timezone(),
-                )
+
+                tz = timezone.get_current_timezone()
+                if timezone.is_naive(start_dt):
+                    start_dt = timezone.make_aware(start_dt, tz)
+                else:
+                    start_dt = timezone.localtime(start_dt, tz)
 
             end_dt = None
             if end_raw:
                 end_clean = end_raw.replace("Z", "")
                 end_dt = datetime.datetime.fromisoformat(end_clean)
-                end_dt = timezone.make_aware(
-                    end_dt,
-                    timezone.get_current_timezone(),
-                )
+
+                tz = timezone.get_current_timezone()
+                if timezone.is_naive(end_dt):
+                    end_dt = timezone.make_aware(end_dt, tz)
+                else:
+                    end_dt = timezone.localtime(end_dt, tz)
 
             booking.scheduled_start = start_dt
 
@@ -154,7 +158,6 @@ def bookings_list(request):
     )
 
 
-# --- Inserted applications_list view ---
 @staff_member_required
 def applications_list(request):
     return render(
@@ -163,7 +166,6 @@ def applications_list(request):
     )
 
 
-# --- Inserted booking_suggestions view ---
 @staff_member_required
 def booking_suggestions(request):
     q = (request.GET.get("q") or "").strip()
@@ -213,7 +215,6 @@ def booking_suggestions(request):
             break
 
     return JsonResponse({"items": items})
-
 
 
 def calendar_events(request):
@@ -374,8 +375,6 @@ def availability_slots(request):
     return JsonResponse(events, safe=False)
 
 
-
-
 def _ensure_client_from_application(app):
     phone = (getattr(app, "phone", "") or "").strip()
     address = (getattr(app, "address", "") or "").strip()
@@ -449,7 +448,6 @@ def application_action(request, app_id):
     return JsonResponse({"ok": True, "status": app.status})
 
 
-# --- Inserted booking_action view ---
 @staff_member_required
 @require_POST
 def booking_action(request, booking_id):

@@ -60,21 +60,94 @@
     return true;
   }
 
-  function fmtChicago(iso) {
+  function chicagoInputValue(isoLike) {
     try {
-      const d = new Date(iso);
-      const fmt = new Intl.DateTimeFormat("en-US", {
+      const d = new Date(isoLike);
+      if (Number.isNaN(d.getTime())) return "";
+
+      const parts = new Intl.DateTimeFormat("en-US", {
         timeZone: "America/Chicago",
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
         minute: "2-digit",
-      });
-      return fmt.format(d);
+        hour12: false,
+      }).formatToParts(d);
+
+      const y = parts.find(p => p.type === "year")?.value || "";
+      const m = parts.find(p => p.type === "month")?.value || "";
+      const da = parts.find(p => p.type === "day")?.value || "";
+      const hh = parts.find(p => p.type === "hour")?.value || "";
+      const mm = parts.find(p => p.type === "minute")?.value || "";
+
+      if (!y || !m || !da || !hh || !mm) return "";
+
+      return `${y}-${m}-${da}T${hh}:${mm}`;
     } catch (e) {
       return "";
     }
+  }
+
+  function prettyLocal(val) {
+    if (!val) return "";
+    return `${val.replace("T", " ")} CT`;
+  }
+
+  function refreshSlotSummaryFromInputs() {
+    const startInput = document.getElementById("scheduledStartInput");
+    const endInput = document.getElementById("scheduledEndInput");
+    const summary = document.getElementById("selectedSlotSummary");
+    const summaryWrap = document.getElementById("selectedSlotSummaryWrap");
+
+    if (!summary || !summaryWrap || !startInput || !endInput) return;
+
+    const s = (startInput.value || "").trim();
+    const e = (endInput.value || "").trim();
+
+    if (!s || !e) return;
+
+    summaryWrap.classList.remove("d-none");
+    summary.textContent = `${prettyLocal(s)} → ${prettyLocal(e)}`;
+  }
+
+  function addOneHourLocal(val) {
+    try {
+      if (!val) return "";
+      const d = new Date(val);
+      if (Number.isNaN(d.getTime())) return "";
+      d.setHours(d.getHours() + 1);
+
+      const pad = (n) => String(n).padStart(2, "0");
+      const y = d.getFullYear();
+      const m = pad(d.getMonth() + 1);
+      const da = pad(d.getDate());
+      const hh = pad(d.getHours());
+      const mm = pad(d.getMinutes());
+
+      return `${y}-${m}-${da}T${hh}:${mm}`;
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function syncScheduledFromManual() {
+    const manualStart = document.getElementById("manualStart");
+    const manualEnd = document.getElementById("manualEnd");
+    const startInput = document.getElementById("scheduledStartInput");
+    const endInput = document.getElementById("scheduledEndInput");
+
+    if (!manualStart || !startInput || !endInput) return;
+
+    const s = (manualStart.value || "").trim();
+    const e = (manualEnd && manualEnd.value ? manualEnd.value : "").trim();
+
+    if (!s) return;
+
+    startInput.value = s;
+    endInput.value = e ? e : addOneHourLocal(s);
+
+    refreshSlotSummaryFromInputs();
   }
 
   function applySelectedSlotFromUrl() {
@@ -87,16 +160,33 @@
     const startInput = document.getElementById("scheduledStartInput");
     const endInput = document.getElementById("scheduledEndInput");
 
-    if (startInput) startInput.value = start;
-    if (endInput) endInput.value = end;
+    if (!startInput || !endInput) return false;
 
-    const summary = document.getElementById("selectedSlotSummary");
-    const summaryWrap = document.getElementById("selectedSlotSummaryWrap");
+    // Only apply URL slot if user hasn't chosen values yet.
+    const hasStart = (startInput.value || "").trim().length > 0;
+    const hasEnd = (endInput.value || "").trim().length > 0;
 
-    if (summary && summaryWrap) {
-      summaryWrap.classList.remove("d-none");
-      summary.textContent = `${fmtChicago(start)} → ${fmtChicago(end)}`;
+    if (!hasStart && !hasEnd) {
+      const sVal = chicagoInputValue(start);
+      const eVal = chicagoInputValue(end);
+
+      if (sVal) startInput.value = sVal;
+      if (eVal) endInput.value = eVal;
     }
+
+    const manualStart = document.getElementById("manualStart");
+    const manualEnd = document.getElementById("manualEnd");
+
+    if (manualStart && !(manualStart.value || "").trim()) {
+      manualStart.value = startInput.value;
+    }
+
+    if (manualEnd && !(manualEnd.value || "").trim()) {
+      manualEnd.value = endInput.value;
+    }
+
+    syncScheduledFromManual();
+    refreshSlotSummaryFromInputs();
 
     const availabilityWrap = document.getElementById("availabilityFieldWrap");
     if (availabilityWrap) availabilityWrap.classList.add("d-none");
@@ -125,6 +215,38 @@
 
   applySelectedSlotFromUrl();
   show(1);
+
+  const scheduledStartInput = document.getElementById("scheduledStartInput");
+  const scheduledEndInput = document.getElementById("scheduledEndInput");
+
+  if (scheduledStartInput) {
+    scheduledStartInput.addEventListener("change", refreshSlotSummaryFromInputs);
+    scheduledStartInput.addEventListener("input", refreshSlotSummaryFromInputs);
+  }
+
+  if (scheduledEndInput) {
+    scheduledEndInput.addEventListener("change", refreshSlotSummaryFromInputs);
+    scheduledEndInput.addEventListener("input", refreshSlotSummaryFromInputs);
+  }
+
+  // If the page already has values (manual admin selection), show them.
+  refreshSlotSummaryFromInputs();
+
+  const manualStart = document.getElementById("manualStart");
+  const manualEnd = document.getElementById("manualEnd");
+
+  if (manualStart) {
+    manualStart.addEventListener("change", syncScheduledFromManual);
+    manualStart.addEventListener("input", syncScheduledFromManual);
+  }
+
+  if (manualEnd) {
+    manualEnd.addEventListener("change", syncScheduledFromManual);
+    manualEnd.addEventListener("input", syncScheduledFromManual);
+  }
+
+  // In admin mode, force hidden scheduled_* to match what was picked.
+  syncScheduledFromManual();
 
   // --- Service description toggle ---
   function toggleServiceDescriptions() {

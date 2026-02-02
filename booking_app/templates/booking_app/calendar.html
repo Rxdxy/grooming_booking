@@ -51,7 +51,7 @@
 
           <div class="detail-line" style="margin-top: 8px;">
             <span class="detail-label">Address</span>
-            <span class="detail-value" id="detailAddress"></span>
+            <span class="detail-value detail-address" id="detailAddress"></span>
           </div>
         </div>
 
@@ -343,6 +343,19 @@
     word-break: break-word;
   }
 
+  .detail-address {
+    font-size: 13px;
+    color: rgba(17, 24, 39, 0.65);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    background: rgba(255, 255, 255, 0.60);
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    border-radius: 12px;
+    padding: 6px 10px;
+    display: inline-flex;
+    align-items: center;
+  }
+
   .detail-actions {
     margin-top: 12px;
     display: flex;
@@ -482,6 +495,8 @@
 
     let selectedStart = null;
     let selectedEnd = null;
+    let selectedStartStr = "";
+    let selectedEndStr = "";
 
     function fmtChicago(iso) {
       try {
@@ -670,9 +685,27 @@
       }
     }
 
-    function toIsoLocal(d) {
+    function toChicagoLocal(d) {
       try {
-        return d.toISOString();
+        const parts = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/Chicago",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).formatToParts(d);
+
+        const y = parts.find((p) => p.type === "year")?.value || "";
+        const m = parts.find((p) => p.type === "month")?.value || "";
+        const da = parts.find((p) => p.type === "day")?.value || "";
+        const hh = parts.find((p) => p.type === "hour")?.value || "";
+        const mm = parts.find((p) => p.type === "minute")?.value || "";
+
+        if (!y || !m || !da || !hh || !mm) return "";
+
+        return `${y}-${m}-${da}T${hh}:${mm}:00`;
       } catch (e) {
         return "";
       }
@@ -687,13 +720,13 @@
     function updateCreateLink() {
       if (!createBtn) return;
 
-      if (!selectedStart) {
+      if (!selectedStartStr || !selectedEndStr) {
         createBtn.href = "/book/?admin=1";
         return;
       }
 
-      const s = encodeURIComponent(toIsoLocal(selectedStart));
-      const e = encodeURIComponent(toIsoLocal(selectedEnd));
+      const s = encodeURIComponent(selectedStartStr);
+      const e = encodeURIComponent(selectedEndStr);
       createBtn.href = `/book/?admin=1&slot_start=${s}&slot_end=${e}`;
     }
 
@@ -788,8 +821,14 @@
         calendar.changeView("timeGridDay");
         calendar.gotoDate(info.dateStr);
 
+        // Use the clicked day string (Chicago calendar day) to avoid day-shift bugs
+        selectedStartStr = `${info.dateStr}T09:00:00`;
+        selectedEndStr = `${info.dateStr}T10:00:00`;
+
+        // Keep Date objects updated too (used elsewhere)
         selectedStart = info.date;
         selectedEnd = addHours(info.date, 1);
+
         updateCreateLink();
       },
       eventClick: function (info) {
@@ -816,6 +855,11 @@
     });
 
     calendar.render();
+
+    // Default create-booking link to "today" in Chicago
+    const todayKey = chicagoDayKey(new Date());
+    selectedStartStr = `${todayKey}T09:00:00`;
+    selectedEndStr = `${todayKey}T10:00:00`;
 
     selectedStart = new Date();
     selectedEnd = addHours(selectedStart, 1);
