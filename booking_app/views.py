@@ -1,82 +1,88 @@
 import datetime
+
+from django.contrib.admin.views.decorators import staff_member_required
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Case, IntegerField, Q, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.db.models import Q, Case, When, IntegerField
+
 from .forms import BookingRequestForm, NewClientApplicationForm
-from .models import (
-    BookingRequest,
-    Client,
-    NewClientApplication,
-    Service,
-)
+from .models import BookingRequest, Client, NewClientApplication, Service
 
 
 def book_request(request):
     if request.method == "POST":
         form = BookingRequestForm(request.POST)
         if form.is_valid():
-            client = Client.objects.create(
-                full_name=form.cleaned_data["full_name"],
-                address=form.cleaned_data["address"],
-                phone=form.cleaned_data["phone"],
-            )
+            try:
+                with transaction.atomic():
+                    client = Client.objects.create(
+                        full_name=form.cleaned_data["full_name"],
+                        address=form.cleaned_data["address"],
+                        phone=form.cleaned_data["phone"],
+                    )
 
-            booking = form.save(commit=False)
-            booking.client = client
+                    booking = form.save(commit=False)
+                    booking.client = client
 
-            # Ensure address is stored on the booking (snapshot), so lists/copy work
-            if not getattr(booking, "address", ""):
-                booking.address = client.address
+                    # Ensure address is stored on the booking (snapshot), so lists/copy work
+                    if not getattr(booking, "address", ""):
+                        booking.address = client.address
 
-            start_raw = request.POST.get("scheduled_start")
-            end_raw = request.POST.get("scheduled_end")
+                    start_raw = request.POST.get("scheduled_start")
+                    end_raw = request.POST.get("scheduled_end")
 
-            # Admin manual booking flow: accept datetime-local inputs
-            manual_start = request.POST.get("manual_start")
-            manual_end = request.POST.get("manual_end")
+                    # Admin manual booking flow: accept datetime-local inputs
+                    manual_start = request.POST.get("manual_start")
+                    manual_end = request.POST.get("manual_end")
 
-            if not start_raw and manual_start:
-                start_raw = manual_start
+                    if not start_raw and manual_start:
+                        start_raw = manual_start
 
-            if not end_raw and manual_end:
-                end_raw = manual_end
+                    if not end_raw and manual_end:
+                        end_raw = manual_end
 
-            start_dt = None
-            if start_raw:
-                start_clean = start_raw.replace("Z", "")
-                start_dt = datetime.datetime.fromisoformat(start_clean)
+                    start_dt = None
+                    if start_raw:
+                        start_clean = start_raw.replace("Z", "")
+                        start_dt = datetime.datetime.fromisoformat(start_clean)
 
-                tz = timezone.get_current_timezone()
-                if timezone.is_naive(start_dt):
-                    start_dt = timezone.make_aware(start_dt, tz)
-                else:
-                    start_dt = timezone.localtime(start_dt, tz)
+                        tz = timezone.get_current_timezone()
+                        if timezone.is_naive(start_dt):
+                            start_dt = timezone.make_aware(start_dt, tz)
+                        else:
+                            start_dt = timezone.localtime(start_dt, tz)
 
-            end_dt = None
-            if end_raw:
-                end_clean = end_raw.replace("Z", "")
-                end_dt = datetime.datetime.fromisoformat(end_clean)
+                    end_dt = None
+                    if end_raw:
+                        end_clean = end_raw.replace("Z", "")
+                        end_dt = datetime.datetime.fromisoformat(end_clean)
 
-                tz = timezone.get_current_timezone()
-                if timezone.is_naive(end_dt):
-                    end_dt = timezone.make_aware(end_dt, tz)
-                else:
-                    end_dt = timezone.localtime(end_dt, tz)
+                        tz = timezone.get_current_timezone()
+                        if timezone.is_naive(end_dt):
+                            end_dt = timezone.make_aware(end_dt, tz)
+                        else:
+                            end_dt = timezone.localtime(end_dt, tz)
 
-            booking.scheduled_start = start_dt
+                    booking.scheduled_start = start_dt
 
-            if end_dt is None and start_dt is not None:
-                end_dt = start_dt + datetime.timedelta(hours=1)
+                    if end_dt is None and start_dt is not None:
+                        end_dt = start_dt + datetime.timedelta(hours=1)
 
-            booking.scheduled_end = end_dt
+                    booking.scheduled_end = end_dt
 
-            booking.save()
-            form.save_m2m()
+                    # Will raise ValidationError if it overlaps (guardrails)
+                    booking.save()
+                    form.save_m2m()
 
-            return redirect("book_success")
+                return redirect("book_success")
+
+            except ValidationError as e:
+                msg = "; ".join(e.messages) if getattr(e, "messages", None) else str(e)
+                form.add_error(None, msg)
     else:
         form = BookingRequestForm()
 
@@ -126,11 +132,7 @@ def availability_dashboard(request):
 def bookings_list(request):
     q = (request.GET.get("q") or "").strip()
 
-    qs = (
-        BookingRequest.objects
-        .select_related("client")
-        .prefetch_related("services")
-    )
+    qs = BookingRequest.objects.select_related("client").prefetch_related("services")
 
     if q:
         qs = qs.filter(
@@ -221,31 +223,23 @@ def calendar_events(request):
     events = []
 
     bookings = (
-        BookingRequest.objects
-        .select_related("client")
+        BookingRequest.objects.select_related("client")
         .exclude(status="declined")
         .exclude(scheduled_start__isnull=True)
     )
 
     for booking in bookings:
         start = timezone.localtime(booking.scheduled_start)
-        end = (
-            timezone.localtime(booking.scheduled_end)
-            if booking.scheduled_end
-            else None
-        )
+        end = timezone.localtime(booking.scheduled_end) if booking.scheduled_end else None
 
         title = f"{booking.pet_name} ({booking.client.full_name})"
-
         addr = booking.address or booking.client.address
 
         event = {
             "id": booking.id,
             "title": title,
             "start": start.isoformat(),
-            "url": (
-                f"/django-admin/booking_app/bookingrequest/{booking.id}/change/"
-            ),
+            "url": f"/django-admin/booking_app/bookingrequest/{booking.id}/change/",
             "extendedProps": {
                 "booking_id": booking.id,
                 "status": booking.status,
@@ -269,8 +263,7 @@ def availability_events(request):
     events = []
 
     bookings = (
-        BookingRequest.objects
-        .exclude(status="declined")
+        BookingRequest.objects.exclude(status="declined")
         .exclude(scheduled_start__isnull=True)
         .exclude(scheduled_end__isnull=True)
     )
@@ -313,8 +306,7 @@ def availability_slots(request):
         range_end = timezone.localtime(range_end, tz)
 
     busy_qs = (
-        BookingRequest.objects
-        .exclude(status="declined")
+        BookingRequest.objects.exclude(status="declined")
         .exclude(scheduled_start__isnull=True)
         .exclude(scheduled_end__isnull=True)
         .filter(scheduled_start__lt=range_end)
@@ -324,9 +316,7 @@ def availability_slots(request):
 
     busy_blocks = []
     for s, e in busy_qs:
-        busy_blocks.append(
-            (timezone.localtime(s, tz), timezone.localtime(e, tz))
-        )
+        busy_blocks.append((timezone.localtime(s, tz), timezone.localtime(e, tz)))
 
     def overlaps(a_start, a_end):
         for b_start, b_end in busy_blocks:
@@ -400,11 +390,7 @@ def _ensure_client_from_application(app):
 
 
 def pending_applications(request):
-    apps = (
-        NewClientApplication.objects
-        .filter(status="pending")
-        .order_by("-created_at")
-    )
+    apps = NewClientApplication.objects.filter(status="pending").order_by("-created_at")
 
     data = []
     for app in apps:
@@ -419,8 +405,7 @@ def pending_applications(request):
                 "address": (getattr(app, "address", "") or "").strip(),
                 "created": created_iso,
                 "admin_url": (
-                    f"/django-admin/booking_app/newclientapplication/"
-                    f"{app.id}/change/"
+                    f"/django-admin/booking_app/newclientapplication/{app.id}/change/"
                 ),
             }
         )

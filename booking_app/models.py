@@ -1,4 +1,6 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 
 
 class NewClientApplication(models.Model):
@@ -74,6 +76,7 @@ class BookingRequest(models.Model):
         ("new", "New"),
         ("confirmed", "Confirmed"),
         ("completed", "Completed"),
+        ("declined", "Declined"),
     ]
     status = models.CharField(
         max_length=20,
@@ -83,13 +86,44 @@ class BookingRequest(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def clean(self):
+        super().clean()
+
+        if not self.scheduled_start or not self.scheduled_end:
+            return
+
+        if self.scheduled_end <= self.scheduled_start:
+            raise ValidationError("End time must be after start time.")
+
+        overlap = (
+            Q(scheduled_start__lt=self.scheduled_end)
+            & Q(scheduled_end__gt=self.scheduled_start)
+        )
+
+        # Block overlaps with active bookings.
+        active = Q(status__in=["new", "confirmed"])
+
+        qs = BookingRequest.objects.filter(overlap & active)
+
+        if self.pk:
+            qs = qs.exclude(pk=self.pk)
+
+        if qs.exists():
+            raise ValidationError(
+                "That time overlaps with an existing booking."
+            )
+
     def save(self, *args, **kwargs):
         if not self.address:
             if self.client_id and self.client and self.client.address:
                 self.address = self.client.address
             else:
                 raise ValueError("BookingRequest requires an address")
-        super().save(*args, **kwargs)
+
+        # Enforce guardrails (also runs `clean()`).
+        self.full_clean()
+
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.client.full_name} - {self.pet_name}"
