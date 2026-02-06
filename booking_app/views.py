@@ -4,7 +4,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Case, IntegerField, Max, Q, When
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -500,3 +500,120 @@ def client_action(request, client_id):
     client.save(update_fields=["is_active"])
 
     return JsonResponse({"ok": True, "is_active": client.is_active})
+
+
+def _ics_escape(value: str) -> str:
+    """Escape text for iCalendar (RFC 5545)."""
+    if value is None:
+        return ""
+
+    s = str(value)
+    s = s.replace("\\", "\\\\")
+    s = s.replace(";", "\\;")
+    s = s.replace(",", "\\,")
+    s = s.replace("\r\n", "\\n").replace("\n", "\\n").replace("\r", "\\n")
+    return s
+
+
+def _ics_dt(dt: datetime.datetime) -> str:
+    """Format datetimes as UTC iCal timestamps."""
+    if dt is None:
+        return ""
+
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+
+    dt_utc = dt.astimezone(datetime.timezone.utc)
+    return dt_utc.strftime("%Y%m%dT%H%M%SZ")
+
+
+@staff_member_required
+def apple_calendar_feed(request):
+    """Apple Calendar subscription feed (confirmed bookings only)."""
+    now = timezone.now()
+
+    qs = (
+        BookingRequest.objects.select_related("client")
+        .prefetch_related("services")
+        .filter(status="confirmed")
+        .exclude(scheduled_start__isnull=True)
+        .exclude(scheduled_end__isnull=True)
+        .order_by("scheduled_start")
+    )
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Naz Mobile Grooming//Booking Calendar//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:Naz Mobile Grooming",
+        "X-WR-TIMEZONE:America/Chicago",
+    ]
+
+    for b in qs:
+        start_dt = b.scheduled_start
+        end_dt = b.scheduled_end
+        if not start_dt or not end_dt:
+            continue
+
+        client_name = (getattr(b.client, "full_name", "") or "").strip()
+        pet_name = (getattr(b, "pet_name", "") or "").strip()
+
+        bits = []
+        if pet_name:
+            bits.append(pet_name)
+        if client_name:
+            bits.append(client_name)
+
+        summary = " — ".join(bits) if bits else "Booking"
+
+        addr = (getattr(b, "address", "") or "").strip()
+        if not addr:
+            addr = (getattr(b.client, "address", "") or "").strip()
+
+        phone = (getattr(b.client, "phone", "") or "").strip()
+
+        services = []
+        try:
+            for s in b.services.all():
+                name = (getattr(s, "name", "") or "").strip()
+                if name:
+                    services.append(name)
+        except Exception:
+            services = []
+
+        desc = []
+        if addr:
+            desc.append(f"Address: {addr}")
+        if phone:
+            desc.append(f"Phone: {phone}")
+        if services:
+            desc.append("Services: " + ", ".join(services))
+
+        uid = f"booking-{b.id}@naz-mobile-grooming"
+
+        lines.append("BEGIN:VEVENT")
+        lines.append(f"UID:{_ics_escape(uid)}")
+        lines.append(f"DTSTAMP:{_ics_dt(now)}")
+        lines.append(f"DTSTART:{_ics_dt(start_dt)}")
+        lines.append(f"DTEND:{_ics_dt(end_dt)}")
+        lines.append(f"SUMMARY:{_ics_escape(summary)}")
+
+        if addr:
+            lines.append(f"LOCATION:{_ics_escape(addr)}")
+
+        if desc:
+            lines.append(
+                f"DESCRIPTION:{_ics_escape('\\n'.join(desc))}"
+            )
+
+        lines.append("END:VEVENT")
+
+    lines.append("END:VCALENDAR")
+
+    ics = "\r\n".join(lines) + "\r\n"
+    resp = HttpResponse(ics, content_type="text/calendar; charset=utf-8")
+    resp["Content-Disposition"] = "inline; filename=calendar.ics"
+    resp["Cache-Control"] = "no-cache"
+    return resp

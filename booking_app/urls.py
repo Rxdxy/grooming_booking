@@ -6,6 +6,7 @@ urlpatterns = [
     path("book/", views.book_request, name="book_request"),
     path("book/success/", views.book_success, name="book_success"),
     path("calendar/", views.calendar_dashboard, name="calendar_dashboard"),
+    path("calendar.ics", views.apple_calendar_feed, name="apple_calendar_feed"),
     path("api/calendar-events/", views.calendar_events, name="calendar_events"),
     path(
         "availability/",
