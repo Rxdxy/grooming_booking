@@ -4,8 +4,18 @@ from .models import BookingRequest, Client, NewClientApplication, Service
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ("full_name", "phone")
+    list_display = ("full_name", "phone", "is_active")
+    list_filter = ("is_active",)
     search_fields = ("full_name", "phone")
+    actions = ("mark_active", "mark_inactive")
+
+    @admin.action(description="Mark selected clients as Active")
+    def mark_active(self, request, queryset):
+        queryset.update(is_active=True)
+
+    @admin.action(description="Mark selected clients as Inactive")
+    def mark_inactive(self, request, queryset):
+        queryset.update(is_active=False)
 
 
 @admin.register(Service)

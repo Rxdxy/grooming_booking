@@ -3,7 +3,7 @@ import datetime
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Case, IntegerField, Q, When
+from django.db.models import Case, IntegerField, Max, Q, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -167,6 +167,39 @@ def applications_list(request):
     return render(
         request,
         "booking_app/applications_list.html",
+    )
+
+
+@staff_member_required
+def clients_list(request):
+    q = (request.GET.get("q") or "").strip()
+    show_inactive = (request.GET.get("show") or "").strip().lower() == "all"
+
+    qs = Client.objects.all()
+
+    if not show_inactive:
+        qs = qs.filter(is_active=True)
+
+    if q:
+        qs = qs.filter(
+            Q(full_name__icontains=q)
+            | Q(phone__icontains=q)
+            | Q(address__icontains=q)
+        )
+
+    qs = (
+        qs.annotate(last_booking=Max("bookingrequest__scheduled_start"))
+        .order_by("-last_booking", "full_name")
+    )
+
+    return render(
+        request,
+        "booking_app/clients_list.html",
+        {
+            "clients": qs,
+            "q": q,
+            "show": "all" if show_inactive else "active",
+        },
     )
 
 
@@ -452,3 +485,18 @@ def booking_action(request, booking_id):
     booking.save(update_fields=["status"])
 
     return JsonResponse({"ok": True, "status": booking.status})
+
+
+@staff_member_required
+@require_POST
+def client_action(request, client_id):
+    client = get_object_or_404(Client, id=client_id)
+
+    action = (request.POST.get("action") or "").strip().lower()
+    if action not in {"activate", "deactivate"}:
+        return JsonResponse({"ok": False, "error": "bad_action"}, status=400)
+
+    client.is_active = action == "activate"
+    client.save(update_fields=["is_active"])
+
+    return JsonResponse({"ok": True, "is_active": client.is_active})

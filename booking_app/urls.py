@@ -27,6 +27,11 @@ urlpatterns = [
         views.applications_list,
         name="applications_list",
     ),
+    path(
+        "clients/",
+        views.clients_list,
+        name="clients_list",
+    ),
     path("apply/", views.apply, name="apply"),
     path("apply/success/", views.apply_success, name="apply_success"),
     path(
@@ -43,6 +48,11 @@ urlpatterns = [
         "api/booking/<int:booking_id>/action/",
         views.booking_action,
         name="booking_action",
+    ),
+    path(
+        "api/client/<int:client_id>/action/",
+        views.client_action,
+        name="client_action",
     ),
     path("bookings/", views.bookings_list, name="bookings_list"),
     path("bookings_list/", views.bookings_list, name="bookings_list_legacy"),

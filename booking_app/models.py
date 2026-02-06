@@ -53,6 +53,8 @@ class Client(models.Model):
     address = models.CharField(max_length=255)
     phone = models.CharField(max_length=30)
 
+    is_active = models.BooleanField(default=True)
+
     def __str__(self):
         return self.full_name
 
