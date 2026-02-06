@@ -45,27 +45,29 @@ def book_request(request):
                     if not end_raw and manual_end:
                         end_raw = manual_end
 
-                    start_dt = None
-                    if start_raw:
-                        start_clean = start_raw.replace("Z", "")
-                        start_dt = datetime.datetime.fromisoformat(start_clean)
+                    def _parse_dt(raw):
+                        if not raw:
+                            return None
+
+                        clean = (raw or "").strip()
+
+                        # Treat trailing Z as UTC for fromisoformat
+                        if clean.endswith("Z"):
+                            clean = clean[:-1] + "+00:00"
+
+                        dt = datetime.datetime.fromisoformat(clean)
 
                         tz = timezone.get_current_timezone()
-                        if timezone.is_naive(start_dt):
-                            start_dt = timezone.make_aware(start_dt, tz)
+                        if timezone.is_naive(dt):
+                            dt = timezone.make_aware(dt, tz)
                         else:
-                            start_dt = timezone.localtime(start_dt, tz)
+                            dt = timezone.localtime(dt, tz)
 
-                    end_dt = None
-                    if end_raw:
-                        end_clean = end_raw.replace("Z", "")
-                        end_dt = datetime.datetime.fromisoformat(end_clean)
+                        return dt
 
-                        tz = timezone.get_current_timezone()
-                        if timezone.is_naive(end_dt):
-                            end_dt = timezone.make_aware(end_dt, tz)
-                        else:
-                            end_dt = timezone.localtime(end_dt, tz)
+                    start_dt = _parse_dt(start_raw)
+
+                    end_dt = _parse_dt(end_raw)
 
                     booking.scheduled_start = start_dt
 

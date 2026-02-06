@@ -11,9 +11,20 @@
         your appointment.
       </p>
 
-      <a href="/book/" class="btn btn-accent">
-        Submit another request
-      </a>
+      {% if next %}
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+          <a href="{{ next }}" class="btn btn-accent">
+            Back to calendar
+          </a>
+          <a href="/availability/" class="btn btn-outline-secondary">
+            View availability
+          </a>
+        </div>
+      {% else %}
+        <a href="/availability/" class="btn btn-accent">
+          Submit another request
+        </a>
+      {% endif %}
     </div>
   </div>
 </div>

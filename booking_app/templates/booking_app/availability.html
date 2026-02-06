@@ -45,9 +45,27 @@
   document.addEventListener("DOMContentLoaded", function () {
     const el = document.getElementById("availabilityCalendar");
 
+    function chicagoTodayKey() {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Chicago",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(new Date());
+
+      const y = parts.find((p) => p.type === "year")?.value || "";
+      const m = parts.find((p) => p.type === "month")?.value || "";
+      const d = parts.find((p) => p.type === "day")?.value || "";
+
+      return `${y}-${m}-${d}`;
+    }
+
+    const todayKey = chicagoTodayKey();
+
     const calendar = new FullCalendar.Calendar(el, {
       timeZone: "America/Chicago",
       initialView: "timeGridWeek",
+      initialDate: todayKey,
       height: "auto",
       nowIndicator: true,
       headerToolbar: {
@@ -66,8 +84,8 @@
           return;
         }
 
-        const startIso = start.toISOString();
-        const endIso = end.toISOString();
+        const startIso = info.event.startStr;
+        const endIso = info.event.endStr;
 
         window.location.href =
           "/book/?slot_start=" +
@@ -78,6 +96,7 @@
     });
 
     calendar.render();
+    calendar.gotoDate(todayKey);
   });
 </script>
-{% endblock %}
+{% endblock %} 

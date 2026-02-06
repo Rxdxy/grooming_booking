@@ -46,12 +46,18 @@
         <div class="detail-body">
           <div class="detail-line">
             <span class="detail-label">Status</span>
-            <span class="detail-value" id="detailStatus"></span>
+            <span class="badge-soft" id="detailStatusPill">
+              <span class="dot" aria-hidden="true"></span>
+              <span id="detailStatus"></span>
+            </span>
           </div>
 
           <div class="detail-line" style="margin-top: 8px;">
             <span class="detail-label">Address</span>
-            <span class="detail-value detail-address" id="detailAddress"></span>
+            <span
+              class="detail-address"
+              id="detailAddress"
+            ></span>
           </div>
         </div>
 
@@ -80,25 +86,20 @@
             Decline
           </button>
 
-          <a class="btn btn-accent" href="/bookings/" id="detailOpenBookings">
+          <a class="btn btn-accent" href="/bookings_list/" id="detailOpenBookings">
             Open bookings
           </a>
         </div>
       </div>
 
       <div class="d-flex flex-wrap gap-2 justify-content-end mt-3 mb-3">
-        <a class="btn btn-accent" id="createBookingBtn" href="/book/?admin=1">
+        <a class="btn btn-accent" id="createBookingBtn" href="/book/?admin=1&next=/calendar/">
           Create booking
         </a>
-        <a class="btn btn-outline-secondary" href="/bookings/">
+        <a class="btn btn-outline-secondary" href="/bookings_list/">
           View booking list
         </a>
-        <a
-          class="btn btn-outline-secondary"
-          href="/django-admin/booking_app/newclientapplication/"
-          target="_blank"
-          rel="noopener"
-        >
+        <a class="btn btn-outline-secondary" href="/applications/">
           View applications
         </a>
       </div>
@@ -127,322 +128,6 @@
   </div>
 </div>
 
-<style>
-
-  .time-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: rgba(246, 196, 83, 0.22);
-    border: 1px solid rgba(246, 196, 83, 0.45);
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(17, 24, 39, 0.85);
-  }
-
-  /* Collapsible section header tile */
-  .section-card {
-    background: rgba(255, 255, 255, 0.55);
-    border: 1px solid rgba(17, 24, 39, 0.06);
-    border-radius: 18px;
-    padding: 12px;
-    box-shadow: 0 10px 26px rgba(16, 24, 40, 0.10);
-    transition:
-      transform 140ms ease,
-      box-shadow 140ms ease,
-      background 140ms ease;
-  }
-
-  .section-card:hover {
-    background: rgba(255, 255, 255, 0.62);
-    box-shadow: 0 12px 30px rgba(16, 24, 40, 0.12);
-  }
-
-  .section-toggle {
-    width: 100%;
-    border: 0;
-    background: rgba(255, 255, 255, 0.72);
-    border-radius: 16px;
-    padding: 14px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-align: left;
-    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.07);
-  }
-
-  .section-toggle:hover {
-    background: rgba(255, 255, 255, 0.78);
-  }
-
-  .section-toggle:focus {
-    outline: none;
-    box-shadow:
-      0 0 0 3px rgba(246, 196, 83, 0.35),
-      0 2px 10px rgba(16, 24, 40, 0.06);
-  }
-
-  .section-title {
-    font-weight: 600;
-    flex: 1;
-  }
-
-  .section-caret {
-    font-size: 18px;
-    line-height: 1;
-    transition: transform 160ms ease;
-  }
-
-  .section-toggle.is-collapsed .section-caret {
-    transform: rotate(-90deg);
-  }
-
-  #appSection {
-    margin-top: 12px;
-    padding: 2px;
-  }
-
-  .section-card .list-group-item {
-    border-radius: 12px;
-    margin-bottom: 8px;
-  }
-
-  .section-card .list-group-item:last-child {
-    margin-bottom: 0;
-  }
-
-  .app-row {
-    display: flex;
-    align-items: start;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .app-meta {
-    margin-top: 2px;
-  }
-
-  .app-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-    min-width: 120px;
-  }
-
-  .app-actions .btn {
-    width: 100%;
-    white-space: nowrap;
-  }
-
-  .app-actions .btn-approve {
-    background: rgba(34, 197, 94, 0.12);
-    border-color: rgba(34, 197, 94, 0.35);
-    color: rgba(17, 24, 39, 0.95);
-  }
-
-  .app-actions .btn-approve:hover {
-    background: rgba(34, 197, 94, 0.18);
-    border-color: rgba(34, 197, 94, 0.45);
-  }
-
-  .app-actions .btn-decline {
-    background: rgba(239, 68, 68, 0.10);
-    border-color: rgba(239, 68, 68, 0.30);
-    color: rgba(17, 24, 39, 0.95);
-  }
-
-  .app-actions .btn-decline:hover {
-    background: rgba(239, 68, 68, 0.16);
-    border-color: rgba(239, 68, 68, 0.40);
-  }
-
-  .app-admin-link {
-    font-size: 12px;
-    color: rgba(17, 24, 39, 0.60);
-    text-decoration: none;
-  }
-
-  .app-admin-link:hover {
-    text-decoration: underline;
-  }
-
-  /* FullCalendar: make today more obvious in month view */
-  .fc .fc-daygrid-day.fc-day-today {
-    background: rgba(246, 196, 83, 0.18);
-  }
-
-  .fc .fc-daygrid-day.fc-day-today {
-    outline: 2px solid rgba(246, 196, 83, 0.55);
-    outline-offset: -2px;
-    border-radius: 10px;
-  }
-
-  .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
-    background: rgba(246, 196, 83, 0.90);
-    color: rgba(17, 24, 39, 0.95);
-    border-radius: 999px;
-    padding: 2px 8px;
-    font-weight: 700;
-  }
-
-  .fc .fc-toolbar-title {
-    letter-spacing: -0.01em;
-  }
-
-
-  .detail-card {
-    margin-top: 14px;
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(17, 24, 39, 0.08);
-    border-radius: 18px;
-    padding: 14px;
-    box-shadow: 0 10px 26px rgba(16, 24, 40, 0.10);
-  }
-
-  .detail-header {
-    display: flex;
-    align-items: start;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .detail-title {
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-
-  .detail-sub {
-    margin-top: 2px;
-    font-size: 13px;
-    color: rgba(17, 24, 39, 0.65);
-  }
-
-  .detail-body {
-    margin-top: 10px;
-  }
-
-  .detail-line {
-    display: flex;
-    gap: 10px;
-    align-items: baseline;
-    flex-wrap: wrap;
-  }
-
-  .detail-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: rgba(17, 24, 39, 0.70);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .detail-value {
-    font-size: 14px;
-    color: rgba(17, 24, 39, 0.90);
-    word-break: break-word;
-  }
-
-  .detail-address {
-    font-size: 13px;
-    color: rgba(17, 24, 39, 0.65);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    background: rgba(255, 255, 255, 0.60);
-    border: 1px solid rgba(17, 24, 39, 0.08);
-    border-radius: 12px;
-    padding: 6px 10px;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .detail-actions {
-    margin-top: 12px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  #detailConfirm {
-    background: rgba(34, 197, 94, 0.12);
-    border-color: rgba(34, 197, 94, 0.35);
-    color: rgba(17, 24, 39, 0.95);
-  }
-
-  #detailConfirm:hover {
-    background: rgba(34, 197, 94, 0.18);
-    border-color: rgba(34, 197, 94, 0.45);
-  }
-
-  #detailDecline {
-    background: rgba(239, 68, 68, 0.10);
-    border-color: rgba(239, 68, 68, 0.30);
-    color: rgba(17, 24, 39, 0.95);
-  }
-
-  #detailDecline:hover {
-    background: rgba(239, 68, 68, 0.16);
-    border-color: rgba(239, 68, 68, 0.40);
-  }
-
-  .stats-row {
-    margin-top: 12px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .stats-pill {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 8px;
-    padding: 10px 12px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.70);
-    border: 1px solid rgba(17, 24, 39, 0.08);
-    box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08);
-  }
-
-  .stats-label {
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: rgba(17, 24, 39, 0.60);
-  }
-
-  .stats-value {
-    font-size: 18px;
-    font-weight: 800;
-    color: rgba(17, 24, 39, 0.92);
-  }
-
-  .stats-suffix {
-    font-size: 13px;
-    color: rgba(17, 24, 39, 0.65);
-  }
-  .toast-wrap {
-    position: fixed;
-    right: 18px;
-    bottom: 18px;
-    z-index: 9999;
-    display: grid;
-    gap: 10px;
-    max-width: 320px;
-  }
-
-  .toast {
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid rgba(17, 24, 39, 0.10);
-    border-radius: 14px;
-    padding: 10px 12px;
-    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.12);
-    font-size: 13px;
-    font-weight: 700;
-    color: rgba(17, 24, 39, 0.95);
-  }
-</style>
 
 <link
   href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css"
@@ -722,13 +407,13 @@
       if (!createBtn) return;
 
       if (!selectedStartStr || !selectedEndStr) {
-        createBtn.href = "/book/?admin=1";
+        createBtn.href = "/book/?admin=1&next=/calendar/";
         return;
       }
 
       const s = encodeURIComponent(selectedStartStr);
       const e = encodeURIComponent(selectedEndStr);
-      createBtn.href = `/book/?admin=1&slot_start=${s}&slot_end=${e}`;
+      createBtn.href = `/book/?admin=1&next=/calendar/&slot_start=${s}&slot_end=${e}`;
     }
 
     function showDetails(title, startIso, endIso, address, status) {

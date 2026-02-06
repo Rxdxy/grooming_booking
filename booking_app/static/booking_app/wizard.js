@@ -145,7 +145,13 @@
     if (!s) return;
 
     startInput.value = s;
-    endInput.value = e ? e : addOneHourLocal(s);
+
+    // If the user hasn't manually edited end, keep it synced to start + 1 hour
+    if (!endWasManuallyEdited || !e) {
+      endInput.value = addOneHourLocal(s);
+    } else {
+      endInput.value = e;
+    }
 
     refreshSlotSummaryFromInputs();
   }
@@ -194,6 +200,48 @@
     return true;
   }
 
+  const scheduledStartInput = document.getElementById("scheduledStartInput");
+  const scheduledEndInput = document.getElementById("scheduledEndInput");
+
+  const manualStart = document.getElementById("manualStart");
+  const manualEnd = document.getElementById("manualEnd");
+
+  let endWasManuallyEdited = false;
+
+  function autoFillEndFromStart() {
+    const sVal = (
+      manualStart && manualStart.value
+        ? manualStart.value
+        : scheduledStartInput && scheduledStartInput.value
+          ? scheduledStartInput.value
+          : ""
+    ).trim();
+
+    if (!sVal) return;
+
+    const eVal = (
+      manualEnd && manualEnd.value
+        ? manualEnd.value
+        : scheduledEndInput && scheduledEndInput.value
+          ? scheduledEndInput.value
+          : ""
+    ).trim();
+
+    if (!endWasManuallyEdited || !eVal) {
+      const nextEnd = addOneHourLocal(sVal);
+
+      if (manualEnd && manualEnd.value !== nextEnd) {
+        manualEnd.value = nextEnd;
+      }
+
+      if (scheduledEndInput && scheduledEndInput.value !== nextEnd) {
+        scheduledEndInput.value = nextEnd;
+      }
+
+      refreshSlotSummaryFromInputs();
+    }
+  }
+
   if (backBtn) {
     backBtn.addEventListener("click", () => show(Math.max(1, current - 1)));
   }
@@ -214,35 +262,64 @@
   }
 
   applySelectedSlotFromUrl();
+  autoFillEndFromStart();
   show(1);
 
-  const scheduledStartInput = document.getElementById("scheduledStartInput");
-  const scheduledEndInput = document.getElementById("scheduledEndInput");
-
   if (scheduledStartInput) {
-    scheduledStartInput.addEventListener("change", refreshSlotSummaryFromInputs);
-    scheduledStartInput.addEventListener("input", refreshSlotSummaryFromInputs);
+    scheduledStartInput.addEventListener("change", () => {
+      endWasManuallyEdited = false;
+      refreshSlotSummaryFromInputs();
+      autoFillEndFromStart();
+    });
+
+    scheduledStartInput.addEventListener("input", () => {
+      endWasManuallyEdited = false;
+      refreshSlotSummaryFromInputs();
+      autoFillEndFromStart();
+    });
   }
 
   if (scheduledEndInput) {
-    scheduledEndInput.addEventListener("change", refreshSlotSummaryFromInputs);
-    scheduledEndInput.addEventListener("input", refreshSlotSummaryFromInputs);
+    scheduledEndInput.addEventListener("change", () => {
+      endWasManuallyEdited = true;
+      refreshSlotSummaryFromInputs();
+    });
+
+    scheduledEndInput.addEventListener("input", () => {
+      endWasManuallyEdited = true;
+      refreshSlotSummaryFromInputs();
+    });
   }
 
   // If the page already has values (manual admin selection), show them.
   refreshSlotSummaryFromInputs();
 
-  const manualStart = document.getElementById("manualStart");
-  const manualEnd = document.getElementById("manualEnd");
-
   if (manualStart) {
-    manualStart.addEventListener("change", syncScheduledFromManual);
-    manualStart.addEventListener("input", syncScheduledFromManual);
+    manualStart.addEventListener("change", () => {
+      endWasManuallyEdited = false;
+      syncScheduledFromManual();
+      autoFillEndFromStart();
+    });
+
+    manualStart.addEventListener("input", () => {
+      endWasManuallyEdited = false;
+      syncScheduledFromManual();
+      autoFillEndFromStart();
+    });
   }
 
   if (manualEnd) {
-    manualEnd.addEventListener("change", syncScheduledFromManual);
-    manualEnd.addEventListener("input", syncScheduledFromManual);
+    manualEnd.addEventListener("change", () => {
+      endWasManuallyEdited = true;
+      syncScheduledFromManual();
+      refreshSlotSummaryFromInputs();
+    });
+
+    manualEnd.addEventListener("input", () => {
+      endWasManuallyEdited = true;
+      syncScheduledFromManual();
+      refreshSlotSummaryFromInputs();
+    });
   }
 
   // In admin mode, force hidden scheduled_* to match what was picked.

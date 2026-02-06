@@ -11,7 +11,7 @@
 
   <div class="section-card">
     <div class="small text-muted mb-3">
-      Approved applications only. This is your active client list.
+      Pending applications. Approve or decline based on location.
     </div>
 
     <div class="list-group" id="applicationsList">
@@ -36,14 +36,24 @@
   }
 
   .app-actions {
-    display: flex;
+    display: grid !important;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
     gap: 8px;
     align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+    justify-content: end;
+    white-space: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .app-actions > * {
+    flex: 0 0 auto;
   }
 
   .btn-mini {
+    display: inline-flex;
+    align-items: center;
     padding: 6px 10px;
     border-radius: 12px;
     font-size: 12px;
@@ -262,13 +272,10 @@
       const appsRaw = await res.json();
       listEl.innerHTML = "";
 
-      const apps = (appsRaw || []).filter((a) => {
-        const s = String(a && a.status ? a.status : "").toLowerCase();
-        return s === "approved";
-      });
+      const apps = (appsRaw || []).slice();
 
       if (!apps.length) {
-        listEl.innerHTML = '<div class="text-muted small">No approved clients yet.</div>';
+        listEl.innerHTML = '<div class="text-muted small">No pending applications right now.</div>';
         return;
       }
 
@@ -295,6 +302,20 @@
               data-action="copy"
             >
               Copy address
+            </button>
+            <button
+              type="button"
+              class="btn-mini btn-approve"
+              data-action="approve"
+            >
+              Approve
+            </button>
+            <button
+              type="button"
+              class="btn-mini btn-decline"
+              data-action="decline"
+            >
+              Decline
             </button>
             ${statusPill(status)}
           </div>
@@ -325,6 +346,25 @@
               const ok = await tryCopy(addr);
               if (!ok) {
                 showCopyField(item, addr);
+              }
+            })();
+            return;
+          }
+          if (action === "approve" || action === "decline") {
+            (async () => {
+              const out = await postAppAction(appId, action);
+              if (!out || !out.ok) {
+                showToast("Action failed");
+                return;
+              }
+
+              showToast(action === "approve" ? "Approved" : "Declined");
+
+              // Since this endpoint returns pending apps, remove it from the list on action.
+              item.remove();
+
+              if (!listEl.querySelector(".list-group-item")) {
+                listEl.innerHTML = '<div class="text-muted small">No pending applications right now.</div>';
               }
             })();
             return;
