@@ -20,6 +20,15 @@
             View availability
           </a>
         </div>
+      {% elif request.user.is_staff %}
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+          <a href="/calendar/" class="btn btn-accent">
+            Back to calendar
+          </a>
+          <a href="/book/?admin=1&next=/calendar/" class="btn btn-outline-secondary">
+            Create another booking
+          </a>
+        </div>
       {% else %}
         <a href="/availability/" class="btn btn-accent">
           Submit another request
