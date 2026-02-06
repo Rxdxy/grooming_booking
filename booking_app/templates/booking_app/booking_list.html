@@ -51,7 +51,13 @@
             >
               <div class="sub-tile-title">Confirmed bookings</div>
               <div class="sub-tile-meta">
-                <span class="count-badge" id="confirmedCount">0</span>
+                <span
+                  class="count-badge sk-shimmer"
+                  id="confirmedCount"
+                  aria-label="Loading count"
+                >
+                  &nbsp;
+                </span>
                 <span
                   class="caret"
                   id="confirmedCaret"
@@ -137,7 +143,7 @@
                 {% endfor %}
               </div>
               <div class="text-muted small d-none" id="confirmedEmpty">
-                No confirmed bookings.
+                No confirmed bookings yet.
               </div>
             </div>
           </div>
@@ -151,7 +157,13 @@
             >
               <div class="sub-tile-title">Declined bookings</div>
               <div class="sub-tile-meta">
-                <span class="count-badge" id="declinedCount">0</span>
+                <span
+                  class="count-badge sk-shimmer"
+                  id="declinedCount"
+                  aria-label="Loading count"
+                >
+                  &nbsp;
+                </span>
                 <span
                   class="caret"
                   id="declinedCaret"
@@ -243,7 +255,18 @@
           </div>
         </div>
       {% else %}
-        <div class="text-muted">No bookings found.</div>
+        <div class="empty-state">
+          <div class="empty-title">No bookings yet</div>
+          <div class="empty-sub text-muted">
+            New bookings will show up here once they are created.
+          </div>
+          <div class="empty-actions">
+            <a class="btn btn-accent" href="/book/?admin=1&next=/bookings_list/">
+              Create booking
+            </a>
+            <a class="btn btn-outline-secondary" href="/calendar/">Back</a>
+          </div>
+        </div>
       {% endif %}
     </div>
   </div>
@@ -400,6 +423,31 @@
   .typeahead-item:hover {
     background: rgba(0, 0, 0, 0.04);
   }
+
+  .empty-state {
+    border: 1px dashed rgba(0, 0, 0, 0.10);
+    border-radius: 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.55);
+    text-align: center;
+  }
+
+  .empty-title {
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+
+  .empty-sub {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .empty-actions {
+    display: inline-flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 </style>
 
 <script>
@@ -485,8 +533,15 @@
     const cCount = confirmedRows.length;
     const dCount = declinedRows.length;
 
-    if (confirmedCount) confirmedCount.textContent = String(cCount);
-    if (declinedCount) declinedCount.textContent = String(dCount);
+    if (confirmedCount) {
+      confirmedCount.classList.remove("sk-shimmer");
+      confirmedCount.textContent = String(cCount);
+    }
+
+    if (declinedCount) {
+      declinedCount.classList.remove("sk-shimmer");
+      declinedCount.textContent = String(dCount);
+    }
 
     if (confirmedEmpty) {
       confirmedEmpty.classList.toggle("d-none", cCount !== 0);

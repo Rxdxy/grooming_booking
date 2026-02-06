@@ -27,6 +27,16 @@
         </div>
       </div>
 
+      <div class="mt-2 d-flex justify-content-start">
+        <a
+          class="btn btn-accent"
+          id="createBookingBtn"
+          href="/book/?admin=1&next=/calendar/"
+        >
+          Create booking
+        </a>
+      </div>
+
       <div id="detailCard" class="detail-card d-none" aria-live="polite">
         <div class="detail-header">
           <div>
@@ -92,20 +102,10 @@
         </div>
       </div>
 
-      <div class="d-flex flex-wrap gap-2 justify-content-end mt-3 mb-3">
-        <a class="btn btn-accent" id="createBookingBtn" href="/book/?admin=1&next=/calendar/">
-          Create booking
-        </a>
-        <a class="btn btn-outline-secondary" href="/bookings_list/">
-          View booking list
-        </a>
-        <a class="btn btn-outline-secondary" href="/applications/">
-          View applications
-        </a>
-      </div>
 
 
-      <div class="mt-4 section-card">
+
+      <div class="mt-2 section-card">
         <button
           type="button"
           class="section-toggle"
@@ -498,6 +498,10 @@
       timeZone: "America/Chicago",
       initialView: "dayGridMonth",
       height: "auto",
+      slotMinTime: "08:00:00",
+      slotMaxTime: "21:00:00",
+      scrollTime: "08:00:00",
+      slotDuration: "00:30:00",
       headerToolbar: {
         left: "prev,next today",
         center: "title",
