@@ -433,23 +433,23 @@
         }
       }
 
-      const st = (status || "").trim() || "pending";
+      const st = (status || "").trim() || "new";
       activeBookingStatus = st;
 
       if (detailStatus) {
         detailStatus.textContent = st;
       }
 
-      const isFinal = st === "confirmed" || st === "declined";
+      const isActionable = st === "new" || st === "pending";
 
       if (detailConfirm) {
-        detailConfirm.disabled = isFinal;
-        detailConfirm.classList.toggle("d-none", isFinal);
+        detailConfirm.disabled = !isActionable;
+        detailConfirm.classList.toggle("d-none", !isActionable);
       }
 
       if (detailDecline) {
-        detailDecline.disabled = isFinal;
-        detailDecline.classList.toggle("d-none", isFinal);
+        detailDecline.disabled = !isActionable;
+        detailDecline.classList.toggle("d-none", !isActionable);
       }
 
       if (detailAddress) {
@@ -508,6 +508,14 @@
         right: "dayGridMonth,timeGridWeek,timeGridDay",
       },
       events: data,
+      eventClassNames: function (arg) {
+        const props = arg.event.extendedProps || {};
+        const status = props.status ? String(props.status).toLowerCase() : "";
+        if (status === "pending" || status === "new") {
+          return ["event-pending"];
+        }
+        return [];
+      },
       dateClick: function (info) {
         calendar.changeView("timeGridDay");
         calendar.gotoDate(info.dateStr);

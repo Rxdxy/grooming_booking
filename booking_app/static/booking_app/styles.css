@@ -376,19 +376,22 @@ button:focus-visible{
   text-decoration:underline;
 }
 
-.fc .fc-daygrid-day.fc-day-today{
-  background:rgba(246,196,83,.18);
-  outline:2px solid rgba(246,196,83,.55);
-  outline-offset:-2px;
-  border-radius:10px;
+/* FullCalendar: highlight "today" in very light blue
+   avoid clash with pending amber */
+.fc .fc-daygrid-day.fc-day-today,
+.fc .fc-timegrid-col.fc-day-today{
+  background-color: rgba(116, 186, 255, 0.10);
+  outline: 2px solid rgba(116, 186, 255, 0.22);
+  outline-offset: -2px;
+  border-radius: 10px;
 }
 
 .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number{
-  background:rgba(246,196,83,.90);
-  color:rgba(17,24,39,.95);
-  border-radius:999px;
-  padding:2px 8px;
-  font-weight:700;
+  background: rgba(116, 186, 255, 0.14);
+  color: rgba(17,24,39,.95);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-weight: 700;
 }
 
 .fc .fc-toolbar-title{
@@ -605,4 +608,157 @@ button:focus-visible{
 .sk-item{
   height: 62px;
   border-radius: 12px;
+}
+
+
+/* Mobile calendar sizing */
+@media (max-width: 768px){
+
+  /* Bigger day cells */
+  .fc .fc-daygrid-day-frame{
+    min-height: 78px;
+  }
+
+  /* Larger date numbers */
+  .fc .fc-daygrid-day-number{
+    font-size: 15px;
+    padding: 6px;
+  }
+
+  /* More breathing room inside cells */
+  .fc .fc-daygrid-day-events{
+    margin-top: 4px;
+  }
+
+  /* Slightly larger toolbar text */
+  .fc .fc-toolbar-title{
+    font-size: 18px;
+  }
+
+}
+
+/* ===============================
+   Mobile polish
+   =============================== */
+
+@media (max-width: 768px){
+  .app-nav{
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+  }
+
+  .nav-logo{
+    height: 52px;
+  }
+
+  .card-soft{
+    border-radius: 16px;
+  }
+
+  .section-card{
+    padding: 10px;
+  }
+
+  .section-toggle{
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .app-row{
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app-actions{
+    flex-direction: row;
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .app-actions .btn{
+    width: auto;
+    flex: 1;
+  }
+
+  .detail-header{
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .detail-actions{
+    gap: 8px;
+  }
+
+  .stats-row{
+    gap: 8px;
+  }
+
+  .stats-pill{
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* FullCalendar toolbar wraps better on phones */
+  .fc .fc-toolbar{
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .fc .fc-toolbar-chunk{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .fc .fc-toolbar-title{
+    font-size: 18px;
+  }
+
+  .fc .fc-button{
+    padding: .35rem .7rem;
+  }
+
+  /* Slightly tighter time grid on phones */
+  .fc .fc-timegrid-slot{
+    height: 30px;
+  }
+}
+
+@media (max-width: 420px){
+  .nav-logo{
+    height: 46px;
+  }
+
+  .detail-address{
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .detail-line{
+    align-items: flex-start;
+  }
+
+  .detail-label{
+    width: 100%;
+  }
+}
+
+/* Pending bookings highlight (calendar) */
+.fc .event-pending,
+.fc a.event-pending{
+  border: 1px solid rgba(244, 196, 74, 0.95);
+  box-shadow: 0 0 0 2px rgba(244, 196, 74, 0.22),
+              0 8px 20px rgba(244, 196, 74, 0.18);
+}
+
+.fc .event-pending{
+  background-color: rgba(244, 196, 74, 0.28);
+}
+
+/* Keep text readable */
+.fc .event-pending .fc-event-title,
+.fc .event-pending .fc-event-time,
+.fc a.event-pending .fc-event-title,
+.fc a.event-pending .fc-event-time{
+  color: inherit;
 }
