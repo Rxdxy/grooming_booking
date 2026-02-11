@@ -18,7 +18,21 @@
   --accent3:#34d399;      /* mint */
 }
 
+/* Solid base background on the page */
 .app-bg{
+  background: var(--bg);
+  color: var(--ink);
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Fixed pastel wash behind the whole app (prevents “restarting” bands) */
+body.app-bg::before{
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
     radial-gradient(
       1200px 600px at 20% 0%,
@@ -29,9 +43,7 @@
       900px 500px at 90% 10%,
       rgba(251,191,36,.14),
       transparent 55%
-    ),
-    var(--bg);
-  color: var(--ink);
+    );
 }
 
 body{
