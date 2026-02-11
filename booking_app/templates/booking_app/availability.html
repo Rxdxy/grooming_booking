@@ -19,9 +19,6 @@
             before requesting an appointment.
           </p>
         </div>
-        <a class="btn btn-outline-secondary" href="/book/">
-          Request booking
-        </a>
       </div>
 
       <div id="availabilityCalendar"></div>
@@ -68,6 +65,9 @@
       initialDate: todayKey,
       height: "auto",
       nowIndicator: true,
+      slotMinTime: "08:00:00",
+      slotMaxTime: "21:00:00",
+      scrollTime: "08:00:00",
       headerToolbar: {
         left: "prev,next today",
         center: "title",
