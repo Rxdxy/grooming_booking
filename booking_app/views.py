@@ -605,7 +605,7 @@ def apple_calendar_feed(request):
 
         if desc:
             lines.append(
-                f"DESCRIPTION:{_ics_escape('\\n'.join(desc))}"
+                f"DESCRIPTION:{_ics_escape('\n'.join(desc))}"
             )
 
         lines.append("END:VEVENT")
