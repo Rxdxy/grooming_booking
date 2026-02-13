@@ -25,6 +25,8 @@
           <span class="brand-text">Naz’s Mobile Grooming</span>
         </a>
 
+        {% with url_name=request.resolver_match.url_name %}
+        {% if url_name != 'apply_success' and url_name != 'book_success' %}
         <div class="nav-actions d-flex align-items-center gap-2 flex-nowrap">
           {% if request.user.is_staff %}
           <div class="dropdown">
@@ -54,6 +56,8 @@
             <a class="btn btn-outline-secondary" href="{% url 'login' %}">Sign in</a>
           {% endif %}
         </div>
+        {% endif %}
+        {% endwith %}
       </div>
     </nav>
     <div style="height:1px;background:rgba(17,24,39,.06)"></div>
