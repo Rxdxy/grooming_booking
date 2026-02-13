@@ -5,22 +5,87 @@
   <meta charset="utf-8">
   <title>Sign in</title>
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a, #020617);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .auth-card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.35);
+      text-align: center;
+    }
+
+    .auth-logo {
+      width: 140px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-weight: 600;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    input {
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
+
+    button {
+      margin-top: 8px;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: #0ea5e9;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0284c7;
+    }
+
+    .error {
+      color: #dc2626;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+  </style>
 </head>
+
 <body>
-  <div class="auth-wrap">
+  <div class="auth-card">
     <img class="auth-logo" src="{% static 'img/logo.png' %}" alt="Logo">
+
     <h1>Sign in</h1>
 
     {% if form.errors %}
-      <p class="error">Invalid username or password.</p>
+      <div class="error">Invalid username or password.</div>
     {% endif %}
 
     <form method="post">
       {% csrf_token %}
-      {{ form.username.label_tag }}
       {{ form.username }}
-
-      {{ form.password.label_tag }}
       {{ form.password }}
 
       <button type="submit">Sign in</button>

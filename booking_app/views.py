@@ -485,6 +485,7 @@ def application_action(request, app_id):
     return JsonResponse({"ok": True, "status": app.status})
 
 
+
 @staff_required
 @require_POST
 def booking_action(request, booking_id):
@@ -499,6 +500,28 @@ def booking_action(request, booking_id):
     else:
         booking.status = "declined"
 
+    booking.save(update_fields=["status"])
+
+    return JsonResponse({"ok": True, "status": booking.status})
+
+
+# New staff-only cancel endpoint
+@staff_required
+@require_POST
+def booking_cancel(request, booking_id):
+    """Cancel an active booking.
+
+    We reuse the existing status system to keep risk low.
+    Canceling sets the booking to 'declined' so it disappears from the calendar
+    and availability calculations.
+    """
+    booking = get_object_or_404(BookingRequest, id=booking_id)
+
+    # Only allow canceling bookings that are not already declined
+    if booking.status == "declined":
+        return JsonResponse({"ok": True, "status": booking.status})
+
+    booking.status = "declined"
     booking.save(update_fields=["status"])
 
     return JsonResponse({"ok": True, "status": booking.status})

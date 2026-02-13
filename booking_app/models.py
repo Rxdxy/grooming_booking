@@ -79,6 +79,7 @@ class BookingRequest(models.Model):
         ("confirmed", "Confirmed"),
         ("completed", "Completed"),
         ("declined", "Declined"),
+        ("canceled", "Canceled"),
     ]
     status = models.CharField(
         max_length=20,
