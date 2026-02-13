@@ -640,7 +640,9 @@
           +
           `</div>`
           +
-          `<div class="app-actions">`
+          `<div class="app-actions d-flex gap-2 flex-wrap justify-content-end">`
+          +
+          `<button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-action="copy">Copy address</button>`
           +
           `<button type="button" class="btn btn-sm btn-outline-secondary btn-approve" data-action="approve">Approve</button>`
           +
@@ -659,6 +661,24 @@
           const appId = item.dataset.appId;
           const action = (btn.getAttribute("data-action") || "").trim();
           if (!appId || !action) return;
+
+          if (action === "copy") {
+            const text = (a.address || "").trim();
+            if (!text) {
+              showToast("No address to copy");
+              return;
+            }
+
+            (async () => {
+              const ok = await tryCopy(text);
+              if (!ok) {
+                window.prompt("Copy address (Cmd+C):", text);
+                return;
+              }
+              showToast("Address copied");
+            })();
+            return;
+          }
 
           const approveBtn = item.querySelector(
             'button[data-action="approve"]'
