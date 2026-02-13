@@ -99,6 +99,15 @@
             Decline
           </button>
 
+          <button
+            type="button"
+            class="btn btn-outline-danger"
+            id="detailCancel"
+            style="width: auto; white-space: nowrap;"
+          >
+            Cancel
+          </button>
+
           <a class="btn btn-accent" href="/bookings_list/" id="detailOpenBookings" style="width: auto; white-space: nowrap;">
             Open bookings
           </a>
@@ -158,6 +167,7 @@
     const detailCopy = document.getElementById("detailCopy");
     const detailConfirm = document.getElementById("detailConfirm");
     const detailDecline = document.getElementById("detailDecline");
+    const detailCancel = document.getElementById("detailCancel");
     const detailClose = document.getElementById("detailClose");
 
     let activeBookingId = "";
@@ -444,6 +454,7 @@
       }
 
       const isActionable = st === "new" || st === "pending";
+      const isConfirmed = st === "confirmed";
 
       if (detailConfirm) {
         detailConfirm.disabled = !isActionable;
@@ -453,6 +464,10 @@
       if (detailDecline) {
         detailDecline.disabled = !isActionable;
         detailDecline.classList.toggle("d-none", !isActionable);
+      }
+
+      if (detailCancel) {
+        detailCancel.classList.toggle("d-none", !isConfirmed);
       }
 
       if (detailAddress) {
@@ -477,6 +492,10 @@
       if (detailDecline) {
         detailDecline.disabled = false;
         detailDecline.classList.remove("d-none");
+      }
+
+      if (detailCancel) {
+        detailCancel.classList.add("d-none");
       }
     }
 
@@ -787,6 +806,13 @@
     if (detailDecline) {
       detailDecline.addEventListener("click", () => {
         runBookingDecision("decline");
+      });
+    }
+
+    if (detailCancel) {
+      detailCancel.addEventListener("click", () => {
+        if (!confirm("Cancel this appointment?")) return;
+        runBookingDecision("cancel");
       });
     }
 
