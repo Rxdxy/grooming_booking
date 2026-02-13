@@ -122,6 +122,14 @@ def apply_success(request):
     return render(request, "booking_app/apply_success.html")
 
 
+def home(request):
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect("calendar_dashboard")
+
+    return redirect("availability_dashboard")
+
+
+@staff_member_required
 def calendar_dashboard(request):
     return render(request, "booking_app/calendar.html")
 
