@@ -1,6 +1,6 @@
 import datetime
 
-from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Case, IntegerField, Max, Q, When
@@ -11,6 +11,15 @@ from django.views.decorators.http import require_POST
 
 from .forms import BookingRequestForm, NewClientApplicationForm
 from .models import BookingRequest, Client, NewClientApplication, Service
+
+# Staff gate that uses the app login (NOT Django admin login)
+# This prevents redirects to /django-admin/login/.
+# Anonymous users and non-staff users will be redirected to /login/?next=...
+staff_required = user_passes_test(
+    lambda u: u.is_staff,
+    login_url="/login/",
+    redirect_field_name="next",
+)
 
 
 def book_request(request):
@@ -129,7 +138,7 @@ def home(request):
     return redirect("availability_dashboard")
 
 
-@staff_member_required
+@staff_required
 def calendar_dashboard(request):
     return render(request, "booking_app/calendar.html")
 
@@ -138,7 +147,7 @@ def availability_dashboard(request):
     return render(request, "booking_app/availability.html")
 
 
-@staff_member_required
+@staff_required
 def bookings_list(request):
     q = (request.GET.get("q") or "").strip()
 
@@ -170,7 +179,7 @@ def bookings_list(request):
     )
 
 
-@staff_member_required
+@staff_required
 def applications_list(request):
     return render(
         request,
@@ -178,7 +187,7 @@ def applications_list(request):
     )
 
 
-@staff_member_required
+@staff_required
 def clients_list(request):
     q = (request.GET.get("q") or "").strip()
     show_inactive = (request.GET.get("show") or "").strip().lower() == "all"
@@ -211,7 +220,7 @@ def clients_list(request):
     )
 
 
-@staff_member_required
+@staff_required
 def booking_suggestions(request):
     q = (request.GET.get("q") or "").strip()
 
@@ -456,7 +465,7 @@ def pending_applications(request):
     return JsonResponse(data, safe=False)
 
 
-@staff_member_required
+@staff_required
 @require_POST
 def application_action(request, app_id):
     app = get_object_or_404(NewClientApplication, id=app_id)
@@ -476,7 +485,7 @@ def application_action(request, app_id):
     return JsonResponse({"ok": True, "status": app.status})
 
 
-@staff_member_required
+@staff_required
 @require_POST
 def booking_action(request, booking_id):
     booking = get_object_or_404(BookingRequest, id=booking_id)
@@ -495,7 +504,7 @@ def booking_action(request, booking_id):
     return JsonResponse({"ok": True, "status": booking.status})
 
 
-@staff_member_required
+@staff_required
 @require_POST
 def client_action(request, client_id):
     client = get_object_or_404(Client, id=client_id)
@@ -535,7 +544,7 @@ def _ics_dt(dt: datetime.datetime) -> str:
     return dt_utc.strftime("%Y%m%dT%H%M%SZ")
 
 
-@staff_member_required
+@staff_required
 def apple_calendar_feed(request):
     """Apple Calendar subscription feed (confirmed bookings only)."""
     now = timezone.now()
