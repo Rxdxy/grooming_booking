@@ -384,6 +384,30 @@
       }
     }
 
+    async function postBookingCancel(bookingId) {
+      const csrf = getCookie("csrftoken");
+      const url = `/api/booking/${bookingId}/cancel/`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "X-CSRFToken": csrf,
+        },
+      });
+
+      if (!res.ok) {
+        return { ok: false };
+      }
+
+      try {
+        return await res.json();
+      } catch (e) {
+        // Some endpoints may return empty body
+        return { ok: true };
+      }
+    }
+
     function toChicagoLocal(d) {
       try {
         const parts = new Intl.DateTimeFormat("en-US", {
@@ -810,9 +834,27 @@
     }
 
     if (detailCancel) {
-      detailCancel.addEventListener("click", () => {
+      detailCancel.addEventListener("click", async () => {
+        if (!activeBookingId) {
+          showToast("No booking selected");
+          return;
+        }
+
         if (!confirm("Cancel this appointment?")) return;
-        runBookingDecision("cancel");
+
+        detailCancel.disabled = true;
+
+        const resp = await postBookingCancel(activeBookingId);
+        if (!resp || !resp.ok) {
+          showToast("Could not cancel booking");
+          detailCancel.disabled = false;
+          return;
+        }
+
+        showToast("Cancelled");
+        window.setTimeout(() => {
+          window.location.reload();
+        }, 400);
       });
     }
 
