@@ -3,6 +3,9 @@ from .models import NewClientApplication, Service, BookingRequest
 
 
 class BookingRequestForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
     full_name = forms.CharField(
         max_length=120,
         widget=forms.TextInput(
@@ -99,6 +102,24 @@ class BookingRequestForm(forms.ModelForm):
             "scheduled_start",
             "scheduled_end",
         )
+
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # Attach creator (Nazar when booking from calendar)
+        if self.user and hasattr(instance, "created_by"):
+            instance.created_by = self.user
+
+        # Auto-confirm for existing active clients
+        if instance.client_id and instance.client and instance.client.is_active:
+            instance.status = "confirmed"
+
+        if commit:
+            instance.save()
+            self.save_m2m()
+
+        return instance
 
 
 # New client application form
