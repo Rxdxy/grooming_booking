@@ -24,22 +24,53 @@ staff_required = user_passes_test(
 
 def book_request(request):
     if request.method == "POST":
-        form = BookingRequestForm(request.POST)
+        form = BookingRequestForm(request.POST, user=request.user)
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    client = Client.objects.create(
-                        full_name=form.cleaned_data["full_name"],
-                        address=form.cleaned_data["address"],
-                        phone=form.cleaned_data["phone"],
-                    )
+                    # Instant-book for existing active clients:
+                    # If a matching active Client exists, reuse it and auto-confirm the booking.
+                    full_name = (form.cleaned_data.get("full_name") or "").strip()
+                    address = (form.cleaned_data.get("address") or "").strip()
+                    phone = (form.cleaned_data.get("phone") or "").strip()
+
+                    qs = Client.objects.filter(is_active=True)
+
+                    # Prefer matching by phone (most reliable), and also match address when present.
+                    if phone:
+                        qs = qs.filter(phone=phone)
+                        if address:
+                            qs = qs.filter(address=address)
+                    else:
+                        # Fallback matching when phone is missing (should be rare)
+                        if full_name:
+                            qs = qs.filter(full_name=full_name)
+                        if address:
+                            qs = qs.filter(address=address)
+
+                    existing_client = qs.order_by("id").first()
+
+                    if existing_client:
+                        client = existing_client
+                    else:
+                        client = Client.objects.create(
+                            full_name=full_name,
+                            address=address,
+                            phone=phone,
+                        )
 
                     booking = form.save(commit=False)
                     booking.client = client
 
+                    # Flag used to auto-confirm existing-client bookings submitted from the public flow
+                    is_existing_client_booking = existing_client is not None
+
                     # Auto-approve staff-created bookings (Nazar booking from the calendar UI)
-                    # Public customer requests should stay pending for approval.
-                    if request.user.is_authenticated and request.user.is_staff:
+                    # and instant-book existing clients.
+                    if (
+                        request.user.is_authenticated
+                        and request.user.is_staff
+                    ) or is_existing_client_booking:
                         # Prefer a model constant if present, else fall back to the literal.
                         status_value = getattr(BookingRequest, "STATUS_CONFIRMED", "confirmed")
                         booking.status = status_value
@@ -49,10 +80,13 @@ def book_request(request):
                             booking.approved_at = timezone.now()
 
                         if hasattr(booking, "approved_by"):
-                            booking.approved_by = request.user
+                            # Only set approved_by when a real staff user exists
+                            if request.user.is_authenticated and request.user.is_staff:
+                                booking.approved_by = request.user
 
                         if hasattr(booking, "created_by"):
-                            booking.created_by = request.user
+                            if request.user.is_authenticated and request.user.is_staff:
+                                booking.created_by = request.user
 
                     # Ensure address is stored on the booking (snapshot), so lists/copy work
                     if not getattr(booking, "address", ""):
@@ -112,7 +146,7 @@ def book_request(request):
                 msg = "; ".join(e.messages) if getattr(e, "messages", None) else str(e)
                 form.add_error(None, msg)
     else:
-        form = BookingRequestForm()
+        form = BookingRequestForm(user=request.user)
 
     return render(
         request,
