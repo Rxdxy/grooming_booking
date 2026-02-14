@@ -1,11 +1,27 @@
 from django import forms
-from .models import NewClientApplication, Service, BookingRequest
+from .models import NewClientApplication, Service, BookingRequest, Client
 
 
 class BookingRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        # Allow views to pass the current user: BookingRequestForm(..., user=request.user)
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+
+        # Always refresh services queryset at runtime (avoid import-time evaluation)
+        if "services" in self.fields:
+            self.fields["services"].queryset = Service.objects.all()
+
+        # Make date time fields render nicely if they appear in a step
+        if "scheduled_start" in self.fields:
+            self.fields["scheduled_start"].widget = forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"}
+            )
+        if "scheduled_end" in self.fields:
+            self.fields["scheduled_end"].widget = forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"}
+            )
+
     full_name = forms.CharField(
         max_length=120,
         widget=forms.TextInput(
@@ -71,11 +87,13 @@ class BookingRequestForm(forms.ModelForm):
         ),
     )
 
+    # IMPORTANT: queryset is set in __init__ so it never goes stale
     services = forms.ModelMultipleChoiceField(
-        queryset=Service.objects.all(),
+        queryset=Service.objects.none(),
         widget=forms.CheckboxSelectMultiple,
+        required=False,
     )
-    
+
     special_needs = forms.CharField(
         required=False,
         widget=forms.Textarea(
@@ -90,9 +108,7 @@ class BookingRequestForm(forms.ModelForm):
     class Meta:
         model = BookingRequest
         fields = (
-            "full_name",
             "address",
-            "phone",
             "pet_name",
             "pet_breed",
             "pet_weight_lbs",
@@ -103,16 +119,43 @@ class BookingRequestForm(forms.ModelForm):
             "scheduled_end",
         )
 
-
     def save(self, commit=True):
         instance = super().save(commit=False)
 
-        # Attach creator (Nazar when booking from calendar)
+        full_name = (self.cleaned_data.get("full_name") or "").strip()
+        phone = (self.cleaned_data.get("phone") or "").strip()
+        address = (self.cleaned_data.get("address") or "").strip()
+
+        # Attach creator (only if model supports it)
         if self.user and hasattr(instance, "created_by"):
             instance.created_by = self.user
 
-        # Auto-confirm for existing active clients
-        if instance.client_id and instance.client and instance.client.is_active:
+        # Reuse an existing active client when possible
+        client = None
+        if phone:
+            existing = Client.objects.filter(phone=phone, is_active=True).first()
+            if existing:
+                # If address is provided and differs, treat as a new client record
+                if address and (existing.address or "").strip() != address:
+                    client = None
+                else:
+                    client = existing
+
+        if client is None:
+            client = Client.objects.create(
+                full_name=full_name or "Client",
+                address=address,
+                phone=phone,
+            )
+
+        instance.client = client
+
+        # Ensure address is always set (model also enforces this)
+        if not instance.address:
+            instance.address = client.address
+
+        # Auto-confirm for known active clients (keeps behavior consistent)
+        if client.is_active:
             instance.status = "confirmed"
 
         if commit:
