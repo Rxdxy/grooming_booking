@@ -37,6 +37,11 @@ def book_request(request):
                     booking = form.save(commit=False)
                     booking.client = client
 
+                    # Auto-approve staff-created bookings (Nazar booking from the calendar UI)
+                    # Public customer requests should stay pending for approval.
+                    if request.user.is_authenticated and request.user.is_staff:
+                        booking.status = "confirmed"
+
                     # Ensure address is stored on the booking (snapshot), so lists/copy work
                     if not getattr(booking, "address", ""):
                         booking.address = client.address
