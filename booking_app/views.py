@@ -1,5 +1,6 @@
 import datetime
 
+from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -26,125 +27,129 @@ def book_request(request):
     if request.method == "POST":
         form = BookingRequestForm(request.POST, user=request.user)
         if form.is_valid():
-            try:
-                with transaction.atomic():
-                    # Instant-book for existing active clients:
-                    # If a matching active Client exists, reuse it and auto-confirm the booking.
-                    full_name = (form.cleaned_data.get("full_name") or "").strip()
-                    address = (form.cleaned_data.get("address") or "").strip()
-                    phone = (form.cleaned_data.get("phone") or "").strip()
+            # Soft gate: when enabled, only allow staff OR known existing active clients to book.
+            # New clients must apply first and be approved.
+            full_name = (form.cleaned_data.get("full_name") or "").strip()
+            address = (form.cleaned_data.get("address") or "").strip()
+            phone = (form.cleaned_data.get("phone") or "").strip()
 
-                    qs = Client.objects.filter(is_active=True)
+            is_staff_user = request.user.is_authenticated and request.user.is_staff
 
-                    # Prefer matching by phone (most reliable), and also match address when present.
-                    if phone:
-                        qs = qs.filter(phone=phone)
-                        if address:
-                            qs = qs.filter(address=address)
-                    else:
-                        # Fallback matching when phone is missing (should be rare)
-                        if full_name:
-                            qs = qs.filter(full_name=full_name)
-                        if address:
-                            qs = qs.filter(address=address)
+            qs = Client.objects.filter(is_active=True)
 
-                    existing_client = qs.order_by("id").first()
+            # Prefer matching by phone (most reliable), and also match address when present.
+            if phone:
+                qs = qs.filter(phone=phone)
+                if address:
+                    qs = qs.filter(address=address)
+            else:
+                # Fallback matching when phone is missing (should be rare)
+                if full_name:
+                    qs = qs.filter(full_name=full_name)
+                if address:
+                    qs = qs.filter(address=address)
 
-                    if existing_client:
-                        client = existing_client
-                    else:
-                        client = Client.objects.create(
-                            full_name=full_name,
-                            address=address,
-                            phone=phone,
-                        )
+            existing_client = qs.order_by("id").first()
 
-                    booking = form.save(commit=False)
-                    booking.client = client
-
-                    # Flag used to auto-confirm existing-client bookings submitted from the public flow
-                    is_existing_client_booking = existing_client is not None
-
-                    # Auto-approve staff-created bookings (Nazar booking from the calendar UI)
-                    # and instant-book existing clients.
-                    if (
-                        request.user.is_authenticated
-                        and request.user.is_staff
-                    ) or is_existing_client_booking:
-                        # Prefer a model constant if present, else fall back to the literal.
-                        status_value = getattr(BookingRequest, "STATUS_CONFIRMED", "confirmed")
-                        booking.status = status_value
-
-                        # Optional audit fields if the model has them
-                        if hasattr(booking, "approved_at"):
-                            booking.approved_at = timezone.now()
-
-                        if hasattr(booking, "approved_by"):
-                            # Only set approved_by when a real staff user exists
-                            if request.user.is_authenticated and request.user.is_staff:
-                                booking.approved_by = request.user
-
-                        if hasattr(booking, "created_by"):
-                            if request.user.is_authenticated and request.user.is_staff:
-                                booking.created_by = request.user
-
-                    # Ensure address is stored on the booking (snapshot), so lists/copy work
-                    if not getattr(booking, "address", ""):
-                        booking.address = client.address
-
-                    start_raw = request.POST.get("scheduled_start")
-                    end_raw = request.POST.get("scheduled_end")
-
-                    # Admin manual booking flow: accept datetime-local inputs
-                    manual_start = request.POST.get("manual_start")
-                    manual_end = request.POST.get("manual_end")
-
-                    if not start_raw and manual_start:
-                        start_raw = manual_start
-
-                    if not end_raw and manual_end:
-                        end_raw = manual_end
-
-                    def _parse_dt(raw):
-                        if not raw:
-                            return None
-
-                        clean = (raw or "").strip()
-
-                        # Treat trailing Z as UTC for fromisoformat
-                        if clean.endswith("Z"):
-                            clean = clean[:-1] + "+00:00"
-
-                        dt = datetime.datetime.fromisoformat(clean)
-
-                        tz = timezone.get_current_timezone()
-                        if timezone.is_naive(dt):
-                            dt = timezone.make_aware(dt, tz)
+            if getattr(settings, "SOFT_GATE_BOOKING", False) and (not is_staff_user) and (existing_client is None):
+                form.add_error(
+                    None,
+                    "New clients must submit an application and be approved before booking. If you are an existing client, enter the same phone number used previously.",
+                )
+            else:
+                try:
+                    with transaction.atomic():
+                        if existing_client:
+                            client = existing_client
                         else:
-                            dt = timezone.localtime(dt, tz)
+                            client = Client.objects.create(
+                                full_name=full_name,
+                                address=address,
+                                phone=phone,
+                            )
 
-                        return dt
+                        booking = form.save(commit=False)
+                        booking.client = client
 
-                    start_dt = _parse_dt(start_raw)
+                        # Flag used to auto-confirm existing-client bookings submitted from the public flow
+                        is_existing_client_booking = existing_client is not None
 
-                    end_dt = _parse_dt(end_raw)
+                        # Auto-approve staff-created bookings (Nazar booking from the calendar UI)
+                        # and instant-book existing clients.
+                        if is_staff_user or is_existing_client_booking:
+                            # Prefer a model constant if present, else fall back to the literal.
+                            status_value = getattr(BookingRequest, "STATUS_CONFIRMED", "confirmed")
+                            booking.status = status_value
 
-                    booking.scheduled_start = start_dt
+                            # Optional audit fields if the model has them
+                            if hasattr(booking, "approved_at"):
+                                booking.approved_at = timezone.now()
 
-                    if end_dt is None and start_dt is not None:
-                        end_dt = start_dt + datetime.timedelta(hours=1)
+                            if hasattr(booking, "approved_by"):
+                                # Only set approved_by when a real staff user exists
+                                if is_staff_user:
+                                    booking.approved_by = request.user
 
-                    booking.scheduled_end = end_dt
+                            if hasattr(booking, "created_by"):
+                                if is_staff_user:
+                                    booking.created_by = request.user
 
-                    # Will raise ValidationError if it overlaps (guardrails)
-                    booking.save()
-                    form.save_m2m()
+                        # Ensure address is stored on the booking (snapshot), so lists/copy work
+                        if not getattr(booking, "address", ""):
+                            booking.address = client.address
 
-                return redirect("book_success")
+                        start_raw = request.POST.get("scheduled_start")
+                        end_raw = request.POST.get("scheduled_end")
 
-            except ValidationError as e:
-                msg = "; ".join(e.messages) if getattr(e, "messages", None) else str(e)
-                form.add_error(None, msg)
+                        # Admin manual booking flow: accept datetime-local inputs
+                        manual_start = request.POST.get("manual_start")
+                        manual_end = request.POST.get("manual_end")
+
+                        if not start_raw and manual_start:
+                            start_raw = manual_start
+
+                        if not end_raw and manual_end:
+                            end_raw = manual_end
+
+                        def _parse_dt(raw):
+                            if not raw:
+                                return None
+
+                            clean = (raw or "").strip()
+
+                            # Treat trailing Z as UTC for fromisoformat
+                            if clean.endswith("Z"):
+                                clean = clean[:-1] + "+00:00"
+
+                            dt = datetime.datetime.fromisoformat(clean)
+
+                            tz = timezone.get_current_timezone()
+                            if timezone.is_naive(dt):
+                                dt = timezone.make_aware(dt, tz)
+                            else:
+                                dt = timezone.localtime(dt, tz)
+
+                            return dt
+
+                        start_dt = _parse_dt(start_raw)
+                        end_dt = _parse_dt(end_raw)
+
+                        booking.scheduled_start = start_dt
+
+                        if end_dt is None and start_dt is not None:
+                            end_dt = start_dt + datetime.timedelta(hours=1)
+
+                        booking.scheduled_end = end_dt
+
+                        # Will raise ValidationError if it overlaps (guardrails)
+                        booking.save()
+                        form.save_m2m()
+
+                    return redirect("book_success")
+
+                except ValidationError as e:
+                    msg = "; ".join(e.messages) if getattr(e, "messages", None) else str(e)
+                    form.add_error(None, msg)
     else:
         form = BookingRequestForm(user=request.user)
 
