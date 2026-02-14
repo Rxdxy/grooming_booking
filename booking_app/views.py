@@ -40,7 +40,19 @@ def book_request(request):
                     # Auto-approve staff-created bookings (Nazar booking from the calendar UI)
                     # Public customer requests should stay pending for approval.
                     if request.user.is_authenticated and request.user.is_staff:
-                        booking.status = "confirmed"
+                        # Prefer a model constant if present, else fall back to the literal.
+                        status_value = getattr(BookingRequest, "STATUS_CONFIRMED", "confirmed")
+                        booking.status = status_value
+
+                        # Optional audit fields if the model has them
+                        if hasattr(booking, "approved_at"):
+                            booking.approved_at = timezone.now()
+
+                        if hasattr(booking, "approved_by"):
+                            booking.approved_by = request.user
+
+                        if hasattr(booking, "created_by"):
+                            booking.created_by = request.user
 
                     # Ensure address is stored on the booking (snapshot), so lists/copy work
                     if not getattr(booking, "address", ""):
