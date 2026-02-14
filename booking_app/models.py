@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -61,6 +62,13 @@ class Client(models.Model):
 
 class BookingRequest(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="booking_requests_created",
+    )
     address = models.CharField(max_length=255)
     pet_name = models.CharField(max_length=100)
     pet_breed = models.CharField(max_length=100)
@@ -122,6 +130,11 @@ class BookingRequest(models.Model):
                 self.address = self.client.address
             else:
                 raise ValueError("BookingRequest requires an address")
+
+        # Auto-confirm bookings created by staff users (ex: Nazar creating in his calendar).
+        # This keeps client-submitted bookings as "new" so they still require approval.
+        if self.status == "new" and self.created_by and getattr(self.created_by, "is_staff", False):
+            self.status = "confirmed"
 
         # Enforce guardrails (also runs `clean()`).
         self.full_clean()
