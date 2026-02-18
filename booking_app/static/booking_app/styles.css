@@ -258,6 +258,17 @@ button:focus-visible{
     0 10px 22px rgba(15,23,42,.10) !important;
 }
 
+/* Event text should stay readable on tinted tiles */
+.fc .fc-event .fc-event-main,
+.fc .fc-event .fc-event-title,
+.fc .fc-event .fc-event-time{
+  color: rgba(15,23,42,.92) !important;
+}
+
+.fc .fc-event .fc-event-main-frame{
+  color: rgba(15,23,42,.92) !important;
+}
+
 /* Availability slots (public calendar): blue tint + rails */
 .fc .event-slot,
 .fc a.event-slot{
