@@ -72,22 +72,30 @@
 
           <div class="detail-line mt-2">
             <span class="detail-label">Start</span>
-            <input
-              type="datetime-local"
-              class="form-control form-control-sm"
-              id="detailStart"
-              style="max-width: 260px"
-            />
+            <span class="detail-sub" id="detailStartText"></span>
           </div>
 
           <div class="detail-line mt-2">
             <span class="detail-label">End</span>
-            <input
-              type="datetime-local"
-              class="form-control form-control-sm"
-              id="detailEnd"
-              style="max-width: 260px"
-            />
+            <span class="detail-sub" id="detailEndText"></span>
+          </div>
+
+          <div class="detail-line mt-2 d-none" id="detailEditRow">
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+              <input
+                type="datetime-local"
+                class="form-control form-control-sm"
+                id="detailStart"
+                style="max-width: 240px"
+              />
+              <span class="small text-muted">to</span>
+              <input
+                type="datetime-local"
+                class="form-control form-control-sm"
+                id="detailEnd"
+                style="max-width: 240px"
+              />
+            </div>
           </div>
         </div>
 
@@ -98,6 +106,22 @@
             id="detailCopy"
           >
             Copy address
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary text-nowrap"
+            id="detailEditTime"
+          >
+            Edit time
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary text-nowrap d-none"
+            id="detailCancelEdit"
+          >
+            Cancel edit
           </button>
 
           <button
@@ -196,6 +220,14 @@
     const detailStart = document.getElementById("detailStart");
     const detailEnd = document.getElementById("detailEnd");
     const detailSaveTime = document.getElementById("detailSaveTime");
+
+    const detailStartText = document.getElementById("detailStartText");
+    const detailEndText = document.getElementById("detailEndText");
+    const detailEditRow = document.getElementById("detailEditRow");
+    const detailEditTime = document.getElementById("detailEditTime");
+    const detailCancelEdit = document.getElementById("detailCancelEdit");
+
+    let isEditingTime = false;
 
     let activeBookingId = "";
     let activeBookingStatus = "";
@@ -510,6 +542,14 @@
         }
       }
 
+      if (detailStartText) {
+        detailStartText.textContent = startIso ? fmtChicago(startIso) : "";
+      }
+
+      if (detailEndText) {
+        detailEndText.textContent = endIso ? timeOnly(endIso) : "";
+      }
+
       const st = (status || "").trim() || "new";
       activeBookingStatus = st;
 
@@ -538,24 +578,36 @@
         detailAddress.textContent = address || "No address";
       }
 
-      // Editable time controls
-      if (detailStart) {
-        detailStart.value = toChicagoLocalInputValue(startIso);
-      }
-
-      if (detailEnd) {
-        detailEnd.value = toChicagoLocalInputValue(endIso);
-      }
-
       const isCancelled = st === "cancelled";
       const isDeclined = st === "declined";
       const canEditTime = !!activeBookingId && !isCancelled && !isDeclined;
 
-      if (detailStart) detailStart.disabled = !canEditTime;
-      if (detailEnd) detailEnd.disabled = !canEditTime;
+      // Reset edit mode whenever a new booking is opened
+      isEditingTime = false;
+      if (detailEditRow) detailEditRow.classList.add("d-none");
+
+      if (detailEditTime) {
+        detailEditTime.disabled = !canEditTime;
+        detailEditTime.classList.toggle("d-none", !canEditTime);
+      }
+
+      if (detailCancelEdit) {
+        detailCancelEdit.classList.add("d-none");
+      }
+
       if (detailSaveTime) {
-        detailSaveTime.disabled = !canEditTime;
-        detailSaveTime.classList.toggle("d-none", !canEditTime);
+        detailSaveTime.classList.add("d-none");
+        detailSaveTime.disabled = false;
+      }
+
+      if (detailStart) {
+        detailStart.disabled = !canEditTime;
+        detailStart.value = toChicagoLocalInputValue(startIso);
+      }
+
+      if (detailEnd) {
+        detailEnd.disabled = !canEditTime;
+        detailEnd.value = toChicagoLocalInputValue(endIso);
       }
 
       detailCard.classList.remove("d-none");
@@ -564,12 +616,21 @@
 
     function hideDetails() {
       if (!detailCard) return;
+      isEditingTime = false;
+      if (detailEditRow) detailEditRow.classList.add("d-none");
+      if (detailEditTime) {
+        detailEditTime.disabled = false;
+        detailEditTime.classList.remove("d-none");
+      }
+      if (detailCancelEdit) detailCancelEdit.classList.add("d-none");
       if (detailSaveTime) {
         detailSaveTime.disabled = false;
         detailSaveTime.classList.add("d-none");
       }
       if (detailStart) detailStart.value = "";
       if (detailEnd) detailEnd.value = "";
+      if (detailStartText) detailStartText.textContent = "";
+      if (detailEndText) detailEndText.textContent = "";
       detailCard.classList.add("d-none");
       activeBookingId = "";
       activeBookingStatus = "";
@@ -952,8 +1013,35 @@
       });
     }
 
+
+    if (detailEditTime) {
+      detailEditTime.addEventListener("click", () => {
+        if (!activeBookingId) {
+          showToast("No booking selected");
+          return;
+        }
+
+        isEditingTime = true;
+        if (detailEditRow) detailEditRow.classList.remove("d-none");
+        if (detailSaveTime) detailSaveTime.classList.remove("d-none");
+        if (detailCancelEdit) detailCancelEdit.classList.remove("d-none");
+      });
+    }
+
+    if (detailCancelEdit) {
+      detailCancelEdit.addEventListener("click", () => {
+        isEditingTime = false;
+        if (detailEditRow) detailEditRow.classList.add("d-none");
+        if (detailSaveTime) detailSaveTime.classList.add("d-none");
+        if (detailCancelEdit) detailCancelEdit.classList.add("d-none");
+      });
+    }
+
     if (detailSaveTime) {
       detailSaveTime.addEventListener("click", async () => {
+        if (!isEditingTime) {
+          return;
+        }
         if (!activeBookingId) {
           showToast("No booking selected");
           return;
