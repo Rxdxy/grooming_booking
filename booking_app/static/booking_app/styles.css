@@ -151,8 +151,57 @@ a:hover{
   border-color: rgba(244,196,48,.45);
 }
 
-.btn-outline-secondary{
+
+/* ===============================
+   Button system (5.3)
+   =============================== */
+
+/* Base button shape and spacing */
+.btn{
   border-radius: 999px;
+  font-weight: 650;
+  padding: .55rem 1rem;
+}
+
+.btn-sm{
+  border-radius: 999px;
+  padding: .35rem .75rem;
+  font-weight: 650;
+}
+
+/* Secondary (neutral) */
+.btn-outline-secondary{
+  border: 1px solid rgba(15,23,42,.14);
+  background: rgba(255,255,255,.60);
+  color: rgba(15,23,42,.88);
+}
+
+.btn-outline-secondary:hover{
+  background: rgba(255,255,255,.78);
+  border-color: rgba(15,23,42,.18);
+  color: rgba(15,23,42,.92);
+}
+
+/* Danger */
+.btn-outline-danger{
+  border: 1px solid rgba(220,38,38,.32);
+  background: rgba(220,38,38,.08);
+  color: rgba(220,38,38,.92);
+}
+
+.btn-outline-danger:hover{
+  background: rgba(220,38,38,.12);
+  border-color: rgba(220,38,38,.40);
+  color: rgba(220,38,38,.95);
+}
+
+/* Disabled */
+.btn:disabled,
+.btn.disabled{
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .form-control, .form-select{
