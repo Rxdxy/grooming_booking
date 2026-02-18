@@ -69,6 +69,26 @@
               id="detailAddress"
             ></span>
           </div>
+
+          <div class="detail-line mt-2">
+            <span class="detail-label">Start</span>
+            <input
+              type="datetime-local"
+              class="form-control form-control-sm"
+              id="detailStart"
+              style="max-width: 260px"
+            />
+          </div>
+
+          <div class="detail-line mt-2">
+            <span class="detail-label">End</span>
+            <input
+              type="datetime-local"
+              class="form-control form-control-sm"
+              id="detailEnd"
+              style="max-width: 260px"
+            />
+          </div>
         </div>
 
         <div class="detail-actions d-flex gap-2 align-items-center flex-row flex-wrap">
@@ -102,6 +122,14 @@
             id="detailCancel"
           >
             Cancel
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary text-nowrap d-none"
+            id="detailSaveTime"
+          >
+            Save time
           </button>
 
           <a class="btn btn-accent text-nowrap" href="/bookings_list/" id="detailOpenBookings">
@@ -165,6 +193,9 @@
     const detailDecline = document.getElementById("detailDecline");
     const detailCancel = document.getElementById("detailCancel");
     const detailClose = document.getElementById("detailClose");
+    const detailStart = document.getElementById("detailStart");
+    const detailEnd = document.getElementById("detailEnd");
+    const detailSaveTime = document.getElementById("detailSaveTime");
 
     let activeBookingId = "";
     let activeBookingStatus = "";
@@ -431,6 +462,18 @@
     }
 
     function addHours(d, hours) {
+    function toChicagoLocalInputValue(iso) {
+      try {
+        if (!iso) return "";
+        const d = new Date(iso);
+        const local = toChicagoLocal(d);
+        if (!local) return "";
+        // datetime-local expects YYYY-MM-DDTHH:MM
+        return local.slice(0, 16);
+      } catch (e) {
+        return "";
+      }
+    }
       const x = new Date(d.getTime());
       x.setHours(x.getHours() + hours);
       return x;
@@ -494,12 +537,38 @@
         detailAddress.textContent = address || "No address";
       }
 
+      // Editable time controls
+      if (detailStart) {
+        detailStart.value = toChicagoLocalInputValue(startIso);
+      }
+
+      if (detailEnd) {
+        detailEnd.value = toChicagoLocalInputValue(endIso);
+      }
+
+      const isCancelled = st === "cancelled";
+      const isDeclined = st === "declined";
+      const canEditTime = !!activeBookingId && !isCancelled && !isDeclined;
+
+      if (detailStart) detailStart.disabled = !canEditTime;
+      if (detailEnd) detailEnd.disabled = !canEditTime;
+      if (detailSaveTime) {
+        detailSaveTime.disabled = !canEditTime;
+        detailSaveTime.classList.toggle("d-none", !canEditTime);
+      }
+
       detailCard.classList.remove("d-none");
       detailCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
     function hideDetails() {
       if (!detailCard) return;
+      if (detailSaveTime) {
+        detailSaveTime.disabled = false;
+        detailSaveTime.classList.add("d-none");
+      }
+      if (detailStart) detailStart.value = "";
+      if (detailEnd) detailEnd.value = "";
       detailCard.classList.add("d-none");
       activeBookingId = "";
       activeBookingStatus = "";
@@ -516,6 +585,34 @@
 
       if (detailCancel) {
         detailCancel.classList.add("d-none");
+      }
+    }
+    async function postBookingReschedule(bookingId, startLocal, endLocal) {
+      const csrf = getCookie("csrftoken");
+      const url = `/api/booking/${bookingId}/reschedule/`;
+
+      const body = new URLSearchParams();
+      body.set("scheduled_start", startLocal);
+      body.set("scheduled_end", endLocal);
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          "X-CSRFToken": csrf,
+        },
+        body: body.toString(),
+      });
+
+      if (!res.ok) {
+        return { ok: false };
+      }
+
+      try {
+        return await res.json();
+      } catch (e) {
+        return { ok: false };
       }
     }
 
@@ -848,6 +945,42 @@
         }
 
         showToast("Cancelled");
+        window.setTimeout(() => {
+          window.location.reload();
+        }, 400);
+      });
+    }
+
+    if (detailSaveTime) {
+      detailSaveTime.addEventListener("click", async () => {
+        if (!activeBookingId) {
+          showToast("No booking selected");
+          return;
+        }
+
+        const startVal = detailStart ? (detailStart.value || "").trim() : "";
+        const endVal = detailEnd ? (detailEnd.value || "").trim() : "";
+
+        if (!startVal || !endVal) {
+          showToast("Start and end are required");
+          return;
+        }
+
+        if (endVal <= startVal) {
+          showToast("End must be after start");
+          return;
+        }
+
+        detailSaveTime.disabled = true;
+
+        const resp = await postBookingReschedule(activeBookingId, startVal, endVal);
+        if (!resp || !resp.ok) {
+          showToast(resp && resp.error ? resp.error : "Could not save time");
+          detailSaveTime.disabled = false;
+          return;
+        }
+
+        showToast("Saved");
         window.setTimeout(() => {
           window.location.reload();
         }, 400);

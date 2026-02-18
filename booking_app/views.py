@@ -562,6 +562,7 @@ def booking_action(request, booking_id):
 
 
 # New staff-only cancel endpoint
+
 @staff_required
 @require_POST
 def booking_cancel(request, booking_id):
@@ -581,6 +582,65 @@ def booking_cancel(request, booking_id):
     booking.save(update_fields=["status"])
 
     return JsonResponse({"ok": True, "status": booking.status})
+
+
+# New staff-only reschedule endpoint
+
+@staff_required
+@require_POST
+def booking_reschedule(request, booking_id):
+    """Reschedule a booking by updating scheduled_start and scheduled_end.
+
+    Expects datetime-local strings in the server's current timezone.
+    Uses model validation to prevent overlaps.
+    """
+    booking = get_object_or_404(BookingRequest, id=booking_id)
+
+    start_raw = (request.POST.get("scheduled_start") or "").strip()
+    end_raw = (request.POST.get("scheduled_end") or "").strip()
+
+    if not start_raw or not end_raw:
+        return JsonResponse({"ok": False, "error": "Start and end are required"}, status=400)
+
+    def _parse_dt_local(raw: str):
+        clean = (raw or "").strip()
+
+        # Treat trailing Z as UTC for fromisoformat
+        if clean.endswith("Z"):
+            clean = clean[:-1] + "+00:00"
+
+        dt = datetime.datetime.fromisoformat(clean)
+
+        tz = timezone.get_current_timezone()
+        if timezone.is_naive(dt):
+            dt = timezone.make_aware(dt, tz)
+        else:
+            dt = timezone.localtime(dt, tz)
+
+        return dt
+
+    try:
+        start_dt = _parse_dt_local(start_raw)
+        end_dt = _parse_dt_local(end_raw)
+    except ValueError:
+        return JsonResponse({"ok": False, "error": "Invalid date/time"}, status=400)
+
+    if end_dt <= start_dt:
+        return JsonResponse({"ok": False, "error": "End must be after start"}, status=400)
+
+    try:
+        booking.scheduled_start = start_dt
+        booking.scheduled_end = end_dt
+
+        # Will raise ValidationError on overlaps or invalid ranges
+        booking.full_clean()
+        booking.save(update_fields=["scheduled_start", "scheduled_end"])
+
+    except ValidationError as e:
+        msg = "; ".join(e.messages) if getattr(e, "messages", None) else str(e)
+        return JsonResponse({"ok": False, "error": msg}, status=400)
+
+    return JsonResponse({"ok": True})
 
 
 @staff_required

@@ -58,6 +58,11 @@ urlpatterns = [
         name="booking_cancel",
     ),
     path(
+        "api/booking/<int:booking_id>/reschedule/",
+        views.booking_reschedule,
+        name="booking_reschedule",
+    ),
+    path(
         "api/client/<int:client_id>/action/",
         views.client_action,
         name="client_action",
