@@ -228,19 +228,41 @@ button:focus-visible{
   border-color: rgba(37,99,235,.55);
 }
 
-/* Availability slot hover feedback */
-.fc-event {
+/* FullCalendar event tiles: tinted with top/bottom rails (no left/right border) */
+.fc .fc-event,
+.fc a.fc-event{
   cursor: pointer;
+  border: none !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  background: var(--event-bg, rgba(15,23,42,.04)) !important;
+
+  /* top + bottom rails */
+  box-shadow:
+    inset 0 3px 0 var(--event-rail, rgba(15,23,42,.22)),
+    inset 0 -3px 0 var(--event-rail, rgba(15,23,42,.22)),
+    0 8px 18px rgba(15,23,42,.08) !important;
+
   transition:
     transform 0.12s ease,
     box-shadow 0.12s ease,
     filter 0.12s ease;
 }
 
-.fc-event:hover {
+.fc .fc-event:hover{
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-  filter: brightness(1.05);
+  filter: brightness(.985);
+  box-shadow:
+    inset 0 3px 0 var(--event-rail, rgba(15,23,42,.22)),
+    inset 0 -3px 0 var(--event-rail, rgba(15,23,42,.22)),
+    0 10px 22px rgba(15,23,42,.10) !important;
+}
+
+/* Availability slots (public calendar): blue tint + rails */
+.fc .event-slot,
+.fc a.event-slot{
+  --event-bg: rgba(37,99,235,.10);
+  --event-rail: rgba(37,99,235,.55);
 }
 
 .badge-soft{
@@ -770,13 +792,8 @@ button:focus-visible{
 /* Pending bookings highlight (calendar) */
 .fc .event-pending,
 .fc a.event-pending{
-  border: 1px solid rgba(244,196,48,.95);
-  box-shadow: 0 0 0 2px rgba(244,196,48,.22),
-              0 8px 20px rgba(244,196,48,.18);
-}
-
-.fc .event-pending{
-  background-color: rgba(244,196,48,.28);
+  --event-bg: rgba(244,196,48,.18);
+  --event-rail: rgba(244,196,48,.70);
 }
 
 /* Keep text readable */
