@@ -1,21 +1,25 @@
 :root{
-  --ink:#111827;
-  --muted:#6b7280;
+  /* Proxbook palette */
+  --ink:#0F172A;
+  --muted:#64748B;
   --card:#ffffff;
-  --bg:#f7f7fb;
-  --line: rgba(17,24,39,.08);
+  --bg:#F9FAFB;
+  --line:#E5E7EB;
 
   --radius: 18px;
   --radius-sm: 12px;
-  --shadow: 0 10px 25px rgba(17,24,39,.06);
-  --shadow-sm: 0 6px 16px rgba(17,24,39,.08);
-  --focus: 0 0 0 4px rgba(96,165,250,.25);
-  --focus2: 0 0 0 4px rgba(251,191,36,.22);
+  --shadow: 0 10px 25px rgba(15,23,42,.06);
+  --shadow-sm: 0 6px 16px rgba(15,23,42,.08);
 
-  /* pastel accent */
-  --accent:#60a5fa;       /* soft blue */
-  --accent2:#fbbf24;      /* pastel yellow */
-  --accent3:#34d399;      /* mint */
+  /* Focus rings */
+  --focus: 0 0 0 4px rgba(37,99,235,.22);
+  --focus2: 0 0 0 4px rgba(244,196,48,.18);
+
+  /* Brand accents */
+  --accent:#2563EB;       /* primary blue */
+  --accent2:#F4C430;      /* accent gold (highlights only) */
+  --success:#16A34A;
+  --danger:#DC2626;
 }
 
 /* Solid base background on the page */
@@ -36,13 +40,13 @@ body.app-bg::before{
   background:
     radial-gradient(
       1200px 600px at 20% 0%,
-      rgba(96,165,250,.18),
-      transparent 50%
+      rgba(37,99,235,.12),
+      transparent 52%
     ),
     radial-gradient(
       900px 500px at 90% 10%,
-      rgba(251,191,36,.14),
-      transparent 55%
+      rgba(244,196,48,.10),
+      transparent 58%
     );
 }
 
@@ -66,7 +70,7 @@ a:hover{
 }
 
 .app-nav{
-  background: rgba(255,255,255,.75);
+  background: rgba(255,255,255,.82);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
   padding-top: .25rem;
@@ -106,7 +110,7 @@ a:hover{
 .progress-soft{
   height: 10px;
   border-radius: 999px;
-  background: rgba(17,24,39,.06);
+  background: rgba(15,23,42,.06);
   overflow:hidden;
 }
 
@@ -120,22 +124,31 @@ a:hover{
 }
 
 .btn-accent{
-  border: none;
-  background:
-    linear-gradient(90deg, var(--accent), var(--accent2));
-  color: white;
+  border: 1px solid rgba(37,99,235,.22);
+  background: var(--accent);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: .55rem 1rem;
+  box-shadow: 0 10px 18px rgba(37,99,235,.18);
 }
 
 .btn-accent:hover{ filter: brightness(.98); }
 
-.btn-accent{
-  border-radius: 999px;
-  padding: .55rem 1rem;
-  box-shadow: 0 10px 18px rgba(96,165,250,.18);
-}
-
 .btn-accent:active{
   transform: translateY(1px);
+}
+
+/* Gold callouts only (Book Now, limited actions) */
+.btn-callout{
+  border: 1px solid rgba(244,196,48,.35);
+  background: rgba(244,196,48,.20);
+  color: rgba(15,23,42,.95);
+  border-radius: 999px;
+}
+
+.btn-callout:hover{
+  background: rgba(244,196,48,.26);
+  border-color: rgba(244,196,48,.45);
 }
 
 .btn-outline-secondary{
@@ -149,7 +162,7 @@ a:hover{
 
 .form-control:focus,
 .form-select:focus{
-  border-color: rgba(96,165,250,.45);
+  border-color: rgba(37,99,235,.45);
   box-shadow: var(--focus);
 }
 
@@ -184,7 +197,7 @@ button:focus-visible{
 }
 
 .fc .fc-button.fc-button-active{
-  background: rgba(96,165,250,.12) !important;
+  background: rgba(37,99,235,.12) !important;
 }
 
 /* Compact day/week time grid so fewer scrolls */
@@ -212,7 +225,7 @@ button:focus-visible{
 }
 
 .fc .fc-timegrid-now-indicator-line{
-  border-color: rgba(96,165,250,.55);
+  border-color: rgba(37,99,235,.55);
 }
 
 /* Availability slot hover feedback */
@@ -260,8 +273,8 @@ button:focus-visible{
   align-items:center;
   padding:4px 10px;
   border-radius:999px;
-  background:rgba(246,196,83,.22);
-  border:1px solid rgba(246,196,83,.45);
+  background: rgba(244,196,48,.18);
+  border: 1px solid rgba(244,196,48,.35);
   font-size:12px;
   font-weight:600;
   color:rgba(17,24,39,.85);
@@ -300,7 +313,7 @@ button:focus-visible{
 
 .section-toggle:focus{
   outline:none;
-  box-shadow:0 0 0 3px rgba(246,196,83,.35), 0 2px 10px rgba(16,24,40,.06);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.22), 0 2px 10px rgba(16,24,40,.06);
 }
 
 .section-title{
@@ -392,15 +405,15 @@ button:focus-visible{
    avoid clash with pending amber */
 .fc .fc-daygrid-day.fc-day-today,
 .fc .fc-timegrid-col.fc-day-today{
-  background-color: rgba(116, 186, 255, 0.10);
-  outline: 2px solid rgba(116, 186, 255, 0.22);
+  background-color: rgba(37,99,235, 0.08);
+  outline: 2px solid rgba(37,99,235, 0.18);
   outline-offset: -2px;
   border-radius: 10px;
 }
 
 .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number{
-  background: rgba(116, 186, 255, 0.14);
-  color: rgba(17,24,39,.95);
+  background: rgba(37,99,235, 0.12);
+  color: rgba(15,23,42,.95);
   border-radius: 999px;
   padding: 4px 8px;
   font-weight: 700;
@@ -758,13 +771,13 @@ button:focus-visible{
 /* Pending bookings highlight (calendar) */
 .fc .event-pending,
 .fc a.event-pending{
-  border: 1px solid rgba(244, 196, 74, 0.95);
-  box-shadow: 0 0 0 2px rgba(244, 196, 74, 0.22),
-              0 8px 20px rgba(244, 196, 74, 0.18);
+  border: 1px solid rgba(244,196,48,.95);
+  box-shadow: 0 0 0 2px rgba(244,196,48,.22),
+              0 8px 20px rgba(244,196,48,.18);
 }
 
 .fc .event-pending{
-  background-color: rgba(244, 196, 74, 0.28);
+  background-color: rgba(244,196,48,.28);
 }
 
 /* Keep text readable */
