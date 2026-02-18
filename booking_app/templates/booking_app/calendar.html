@@ -556,7 +556,7 @@
         if (status === "pending" || status === "new") {
           return ["event-pending"];
         }
-        return [];
+        return ["event-slot"]; // confirmed + everything else uses the blue slot tile
       },
       dateClick: function (info) {
         calendar.changeView("timeGridDay");
