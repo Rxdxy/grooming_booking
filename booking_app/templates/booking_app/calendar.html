@@ -461,7 +461,6 @@
       }
     }
 
-    function addHours(d, hours) {
     function toChicagoLocalInputValue(iso) {
       try {
         if (!iso) return "";
@@ -474,6 +473,8 @@
         return "";
       }
     }
+
+    function addHours(d, hours) {
       const x = new Date(d.getTime());
       x.setHours(x.getHours() + hours);
       return x;
