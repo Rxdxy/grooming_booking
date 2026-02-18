@@ -71,44 +71,40 @@
           </div>
         </div>
 
-        <div class="detail-actions d-flex gap-2 align-items-center" style="flex-direction: row; flex-wrap: nowrap;">
+        <div class="detail-actions d-flex gap-2 align-items-center flex-row flex-wrap">
           <button
             type="button"
-            class="btn btn-outline-secondary"
+            class="btn btn-outline-secondary text-nowrap"
             id="detailCopy"
-            style="width: auto; white-space: nowrap;"
           >
             Copy address
           </button>
 
           <button
             type="button"
-            class="btn btn-outline-secondary"
+            class="btn btn-outline-secondary text-nowrap"
             id="detailConfirm"
-            style="width: auto; white-space: nowrap;"
           >
             Confirm
           </button>
 
           <button
             type="button"
-            class="btn btn-outline-secondary"
+            class="btn btn-outline-secondary text-nowrap"
             id="detailDecline"
-            style="width: auto; white-space: nowrap;"
           >
             Decline
           </button>
 
           <button
             type="button"
-            class="btn btn-outline-danger"
+            class="btn btn-outline-danger text-nowrap"
             id="detailCancel"
-            style="width: auto; white-space: nowrap;"
           >
             Cancel
           </button>
 
-          <a class="btn btn-accent" href="/bookings_list/" id="detailOpenBookings" style="width: auto; white-space: nowrap;">
+          <a class="btn btn-accent text-nowrap" href="/bookings_list/" id="detailOpenBookings">
             Open bookings
           </a>
         </div>
@@ -659,7 +655,7 @@
 
       apps.slice(0, 30).forEach((a) => {
         const item = document.createElement("div");
-        item.className = "list-group-item";
+        item.className = "card-soft p-3 mb-2 app-tile";
         item.dataset.appId = String(a.id || "");
 
         const name = a.name || "Application";
@@ -686,13 +682,13 @@
           +
           `</div>`
           +
-          `<div class="app-actions d-flex gap-2 justify-content-end align-items-center" style="flex-direction: row; flex-wrap: nowrap;">`
+          `<div class="app-actions d-flex gap-2 justify-content-end align-items-center flex-row flex-wrap">`
           +
-          `<button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-action="copy" style="width: auto; white-space: nowrap;">Copy address</button>`
+          `<button type="button" class="btn btn-sm btn-outline-secondary btn-copy text-nowrap" data-action="copy">Copy address</button>`
           +
-          `<button type="button" class="btn btn-sm btn-outline-secondary btn-approve" data-action="approve" style="width: auto; white-space: nowrap;">Approve</button>`
+          `<button type="button" class="btn btn-sm btn-outline-secondary btn-approve text-nowrap" data-action="approve">Approve</button>`
           +
-          `<button type="button" class="btn btn-sm btn-outline-secondary btn-decline" data-action="decline" style="width: auto; white-space: nowrap;">Decline</button>`
+          `<button type="button" class="btn btn-sm btn-outline-secondary btn-decline text-nowrap" data-action="decline">Decline</button>`
           +
           `</div>`
           +
