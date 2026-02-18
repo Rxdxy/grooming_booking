@@ -12,11 +12,11 @@
   --shadow-sm: 0 6px 16px rgba(15,23,42,.08);
 
   /* Focus rings */
-  --focus: 0 0 0 4px rgba(37,99,235,.22);
+  --focus: 0 0 0 4px rgba(96,165,250,.25);
   --focus2: 0 0 0 4px rgba(244,196,48,.18);
 
   /* Brand accents */
-  --accent:#2563EB;       /* primary blue */
+  --accent:#60A5FA;       /* primary blue (lighter) */
   --accent2:#F4C430;      /* accent gold (highlights only) */
   --success:#16A34A;
   --danger:#DC2626;
@@ -40,7 +40,7 @@ body.app-bg::before{
   background:
     radial-gradient(
       1200px 600px at 20% 0%,
-      rgba(37,99,235,.12),
+      rgba(96,165,250,.12),
       transparent 52%
     ),
     radial-gradient(
@@ -124,12 +124,12 @@ a:hover{
 }
 
 .btn-accent{
-  border: 1px solid rgba(37,99,235,.22);
+  border: 1px solid rgba(96,165,250,.22);
   background: var(--accent);
   color: #ffffff;
   border-radius: 999px;
   padding: .55rem 1rem;
-  box-shadow: 0 10px 18px rgba(37,99,235,.18);
+  box-shadow: 0 10px 18px rgba(96,165,250,.18);
 }
 
 .btn-accent:hover{ filter: brightness(.98); }
@@ -162,7 +162,7 @@ a:hover{
 
 .form-control:focus,
 .form-select:focus{
-  border-color: rgba(37,99,235,.45);
+  border-color: rgba(96,165,250,.45);
   box-shadow: var(--focus);
 }
 
@@ -197,7 +197,7 @@ button:focus-visible{
 }
 
 .fc .fc-button.fc-button-active{
-  background: rgba(37,99,235,.12) !important;
+  background: rgba(96,165,250,.12) !important;
 }
 
 /* Compact day/week time grid so fewer scrolls */
@@ -225,7 +225,7 @@ button:focus-visible{
 }
 
 .fc .fc-timegrid-now-indicator-line{
-  border-color: rgba(37,99,235,.55);
+  border-color: rgba(96,165,250,.55);
 }
 
 /* FullCalendar event tiles: tinted with top/bottom rails (no left/right border) */
@@ -261,8 +261,8 @@ button:focus-visible{
 /* Availability slots (public calendar): blue tint + rails */
 .fc .event-slot,
 .fc a.event-slot{
-  --event-bg: rgba(37,99,235,.10);
-  --event-rail: rgba(37,99,235,.55);
+  --event-bg: rgba(96,165,250,.10);
+  --event-rail: rgba(96,165,250,.55);
 }
 
 .badge-soft{
@@ -335,7 +335,7 @@ button:focus-visible{
 
 .section-toggle:focus{
   outline:none;
-  box-shadow: 0 0 0 3px rgba(37,99,235,.22), 0 2px 10px rgba(16,24,40,.06);
+  box-shadow: 0 0 0 3px rgba(96,165,250,.25), 0 2px 10px rgba(16,24,40,.06);
 }
 
 .section-title{
