@@ -51,13 +51,73 @@ body.app-bg::before{
 }
 
 body{
-  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ===============================
+   Typography system (5.4)
+   =============================== */
+
+:root{
+  --fs-hero: 28px;
+  --fs-h1: 22px;
+  --fs-h2: 18px;
+  --fs-h3: 16px;
+  --fs-body: 15px;
+  --fs-small: 13px;
+  --lh-body: 1.55;
+}
+
+body{
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
 h1,h2,h3,h4,h5{
   letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1.18;
+}
+
+h1{ font-size: var(--fs-hero); font-weight: 800; }
+h2{ font-size: var(--fs-h1);  font-weight: 780; }
+h3{ font-size: var(--fs-h2);  font-weight: 740; }
+h4{ font-size: var(--fs-h3);  font-weight: 720; }
+
+p{ margin-bottom: .85rem; }
+
+.small,
+.text-small{
+  font-size: var(--fs-small);
+}
+
+.text-muted,
+.muted{
+  color: var(--muted) !important;
+}
+
+/* Labels and meta */
+.kicker{
+  color: var(--muted);
+  font-size: var(--fs-small);
+  font-weight: 650;
+  letter-spacing: .02em;
+  margin-bottom: .5rem;
+}
+
+.detail-label,
+.stats-label{
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+
+.detail-sub,
+.app-admin-link,
+.fc .fc-timegrid-axis-cushion,
+.fc .fc-timegrid-slot-label-cushion{
+  color: rgba(15,23,42,.62);
 }
 
 a{
