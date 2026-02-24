@@ -892,30 +892,22 @@
           if (declineBtn) declineBtn.disabled = true;
 
           (async () => {
+            // Optimistic UI: remove immediately
+            apps = apps.filter((x) => String(x.id) !== String(appId));
+            item.remove();
+            updatePendingCounters(apps.length);
+            if (!apps.length) renderEmptyApps();
+
             const resp = await postAppAction(appId, action);
+
             if (!resp || resp.error) {
-              if (approveBtn) approveBtn.disabled = false;
-              if (declineBtn) declineBtn.disabled = false;
-              showToast("Could not update. Try again.");
+              showToast("Server error, refresh if needed");
               return;
             }
 
             const newStatus = (resp.status || "pending").toLowerCase();
-            if (newStatus === "approved") {
-              showToast("Approved");
-            } else if (newStatus === "declined") {
-              showToast("Declined");
-            }
-
-            // Remove from local list + UI
-            apps = apps.filter((x) => String(x.id) !== String(appId));
-            item.remove();
-
-            updatePendingCounters(apps.length);
-
-            if (!apps.length) {
-              renderEmptyApps();
-            }
+            if (newStatus === "approved") showToast("Approved");
+            if (newStatus === "declined") showToast("Declined");
           })();
         });
 
