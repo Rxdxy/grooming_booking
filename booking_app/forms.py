@@ -49,6 +49,15 @@ class BookingRequestForm(forms.ModelForm):
             }
         ),
     )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "you@example.com",
+            }
+        ),
+    )
 
     pet_name = forms.CharField(
         max_length=100,
@@ -125,6 +134,7 @@ class BookingRequestForm(forms.ModelForm):
         full_name = (self.cleaned_data.get("full_name") or "").strip()
         phone = (self.cleaned_data.get("phone") or "").strip()
         address = (self.cleaned_data.get("address") or "").strip()
+        email = (self.cleaned_data.get("email") or "").strip()
 
         # Attach creator (only if model supports it)
         if self.user and hasattr(instance, "created_by"):
@@ -140,12 +150,16 @@ class BookingRequestForm(forms.ModelForm):
                     client = None
                 else:
                     client = existing
+                    if email and (not getattr(existing, "email", None)):
+                        existing.email = email
+                        existing.save(update_fields=["email"])
 
         if client is None:
             client = Client.objects.create(
                 full_name=full_name or "Client",
                 address=address,
                 phone=phone,
+                email=email,
             )
 
         instance.client = client
@@ -174,6 +188,7 @@ class NewClientApplicationForm(forms.ModelForm):
             "address",
             "zip_code",
             "phone",
+            "email",
             "pet_name",
             "pet_breed",
             "pet_weight_lbs",
@@ -203,6 +218,12 @@ class NewClientApplicationForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "placeholder": "(555) 555-5555",
+                }
+            ),
+            "email": forms.EmailInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "you@example.com",
                 }
             ),
             "pet_name": forms.TextInput(
