@@ -2,6 +2,7 @@ import datetime
 
 from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
+from django.core.mail import send_mail
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Case, IntegerField, Max, Q, When
@@ -12,6 +13,52 @@ from django.views.decorators.http import require_POST
 
 from .forms import BookingRequestForm, NewClientApplicationForm
 from .models import BookingRequest, Client, NewClientApplication, Service
+# Helper functions for booking email notifications
+
+def _get_booking_email(booking) -> str:
+    """Best-effort lookup for a client's email address.
+
+    We keep this flexible because some deployments store email on BookingRequest,
+    others on Client.
+    """
+    candidates = [
+        getattr(booking, "email", None),
+        getattr(booking, "client_email", None),
+        getattr(getattr(booking, "client", None), "email", None),
+    ]
+
+    for c in candidates:
+        if not c:
+            continue
+        val = str(c).strip()
+        if val:
+            return val
+
+    return ""
+
+
+def _send_booking_email(booking, subject: str, lines: list[str]) -> bool:
+    """Send a plain-text email to the booking's email address.
+
+    Returns True if we attempted to send, False if no recipient is available.
+    Any SMTP errors are swallowed so prod behavior never breaks.
+    """
+    to_email = _get_booking_email(booking)
+    if not to_email:
+        return False
+
+    try:
+        message = "\n".join([ln for ln in lines if ln is not None])
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            recipient_list=[to_email],
+            fail_silently=True,
+        )
+        return True
+    except Exception:
+        return True
 
 # Staff gate that uses the app login (NOT Django admin login)
 # This prevents redirects to /django-admin/login/.
@@ -553,6 +600,16 @@ def booking_action(request, booking_id):
 
     if action == "confirm":
         booking.status = "confirmed"
+        # Send confirmation email (best-effort; does not block the action)
+        email_lines = [
+            "Your booking is confirmed.",
+            "",
+            f"Client: {getattr(getattr(booking, 'client', None), 'full_name', '')}",
+            f"Pet: {getattr(booking, 'pet_name', '')}",
+            f"Start: {booking.scheduled_start}",
+            f"End: {booking.scheduled_end}",
+        ]
+        _send_booking_email(booking, "Booking confirmed", email_lines)
     else:
         booking.status = "declined"
 
@@ -579,6 +636,16 @@ def booking_cancel(request, booking_id):
         return JsonResponse({"ok": True, "status": booking.status})
 
     booking.status = "declined"
+    # Send cancellation email (best-effort; does not block the action)
+    email_lines = [
+        "Your booking was cancelled.",
+        "",
+        f"Client: {getattr(getattr(booking, 'client', None), 'full_name', '')}",
+        f"Pet: {getattr(booking, 'pet_name', '')}",
+        f"Start: {booking.scheduled_start}",
+        f"End: {booking.scheduled_end}",
+    ]
+    _send_booking_email(booking, "Booking cancelled", email_lines)
     booking.save(update_fields=["status"])
 
     return JsonResponse({"ok": True, "status": booking.status})
