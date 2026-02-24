@@ -25,6 +25,7 @@ class NewClientApplication(models.Model):
     address = models.CharField(max_length=255)
     zip_code = models.CharField(max_length=10)
     phone = models.CharField(max_length=30)
+    email = models.EmailField(null=True, blank=True)
 
     pet_name = models.CharField(max_length=80)
     pet_breed = models.CharField(max_length=120)
@@ -53,6 +54,7 @@ class Client(models.Model):
     full_name = models.CharField(max_length=120)
     address = models.CharField(max_length=255)
     phone = models.CharField(max_length=30)
+    email = models.EmailField(null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
 
