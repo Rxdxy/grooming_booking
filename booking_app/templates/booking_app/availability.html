@@ -21,6 +21,11 @@
         </div>
       </div>
 
+      {% if approved_client %}
+      <div class="alert alert-success py-2 mb-2">
+        You are approved to book.
+      </div>
+      {% endif %}
       <div id="availabilityCalendar"></div>
 
       <p class="text-muted small mt-2 mb-0">
@@ -88,11 +93,21 @@
         const startIso = info.event.startStr;
         const endIso = info.event.endStr;
 
-        window.location.href =
+        // Carry approval token forward if present in URL
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+
+        let url =
           "/book/?slot_start=" +
           encodeURIComponent(startIso) +
           "&slot_end=" +
           encodeURIComponent(endIso);
+
+        if (token) {
+          url += "&approval_token=" + encodeURIComponent(token);
+        }
+
+        window.location.href = url;
       },
     });
 
