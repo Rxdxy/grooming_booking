@@ -673,30 +673,36 @@ def application_action(request, app_id):
         client.is_approved = True
         client.save(update_fields=["is_approved"])
 
+        # Mark approved first so the UI updates even if email fails or times out
+        app.status = "approved"
+        app.save(update_fields=["status"])
+
         token = _ensure_client_token(client)
         base = _get_public_base_url(request)
         link = f"{base}/availability/?token={token}"
 
-        # Send approval email (best-effort)
+        # Send approval email (best-effort; never block approvals)
         to_email = (getattr(app, "email", "") or "").strip() or (getattr(client, "email", "") or "").strip()
         if to_email:
-            send_mail(
-                subject="You’re approved to book",
-                message=(
-                    "Your application has been approved.\n\n"
-                    "Use this link to book your appointment:\n"
-                    f"{link}\n"
-                ),
-                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-                recipient_list=[to_email],
-                fail_silently=True,
-            )
-
-        app.status = "approved"
+            try:
+                send_mail(
+                    subject="You’re approved to book",
+                    message=(
+                        "Your application has been approved.\n\n"
+                        "Use this link to book your appointment:\n"
+                        f"{link}\n"
+                    ),
+                    from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                    recipient_list=[to_email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
     else:
         app.status = "declined"
 
-    app.save(update_fields=["status"])
+    if action != "approve":
+        app.save(update_fields=["status"])
 
     return JsonResponse({"ok": True, "status": app.status})
 
