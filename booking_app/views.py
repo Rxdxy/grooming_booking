@@ -1,4 +1,5 @@
 import datetime
+import secrets
 
 from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
@@ -70,6 +71,49 @@ staff_required = user_passes_test(
 )
 
 
+# === Magic-link/Token Helpers ===
+
+def _get_public_base_url(request) -> str:
+    """Return the public base URL for links sent to customers."""
+    # Prefer an explicit setting if you add one later.
+    base = getattr(settings, "PUBLIC_BASE_URL", "").strip()
+    if base:
+        return base.rstrip("/")
+
+    # Fallback: derive from the incoming request.
+    return request.build_absolute_uri("/").rstrip("/")
+
+
+def _get_approved_client_from_token(token: str):
+    """Return an approved, active client for a magic-link token."""
+    t = (token or "").strip()
+    if not t:
+        return None
+
+    return (
+        Client.objects.filter(
+            is_active=True,
+            is_approved=True,
+            approval_token=t,
+        )
+        .order_by("id")
+        .first()
+    )
+
+
+def _ensure_client_token(client: Client) -> str:
+    """Ensure an approved client has a token and return it."""
+    token = (getattr(client, "approval_token", "") or "").strip()
+    if token:
+        return token
+
+    # token_urlsafe(32) is typically ~43 chars. Keep well under max_length=64.
+    token = secrets.token_urlsafe(32)
+    client.approval_token = token
+    client.save(update_fields=["approval_token"])
+    return token
+
+
 def book_request(request):
     if request.method == "POST":
         form = BookingRequestForm(request.POST, user=request.user)
@@ -85,6 +129,10 @@ def book_request(request):
 
             qs = Client.objects.filter(is_active=True)
 
+            # Magic-link token gate: approved clients can book without accounts.
+            token = (request.POST.get("approval_token") or request.COOKIES.get("pb_token") or "").strip()
+            token_client = _get_approved_client_from_token(token)
+
             # Prefer matching by phone (most reliable), and also match address when present.
             if phone:
                 qs = qs.filter(phone=phone)
@@ -99,22 +147,32 @@ def book_request(request):
 
             existing_client = qs.order_by("id").first()
 
+            # If a valid approved token exists, treat them as the existing client.
+            if token_client is not None:
+                existing_client = token_client
+
             if getattr(settings, "SOFT_GATE_BOOKING", False) and (not is_staff_user) and (existing_client is None):
                 form.add_error(
                     None,
-                    "New clients must submit an application and be approved before booking. If you are an existing client, enter the same phone number used previously.",
+                    "New clients must submit an application and be approved before booking. If you are an approved client, use your approval email link to access booking."
                 )
             else:
                 try:
                     with transaction.atomic():
                         if existing_client:
                             client = existing_client
+                            # Keep approved status if this client came from a magic link.
+                            # (No-op for normal matches.)
+                            if getattr(client, "is_approved", False) is False and token_client is not None:
+                                client.is_approved = True
+                                client.save(update_fields=["is_approved"])
                         else:
                             client = Client.objects.create(
                                 full_name=full_name,
                                 address=address,
                                 phone=phone,
                                 email=email,
+                                is_approved=True if token_client is not None else False,
                             )
                         # Best-effort sync: fill in email on existing client if missing
                         if email and (not getattr(client, "email", None)):
@@ -253,7 +311,29 @@ def calendar_dashboard(request):
 
 
 def availability_dashboard(request):
-    return render(request, "booking_app/availability.html")
+    token = (request.GET.get("token") or "").strip()
+    token_client = _get_approved_client_from_token(token)
+
+    resp = render(
+        request,
+        "booking_app/availability.html",
+        {
+            "approved_client": token_client,
+        },
+    )
+
+    # If token is valid, store it in a cookie for convenience.
+    if token_client is not None:
+        resp.set_cookie(
+            "pb_token",
+            token,
+            max_age=60 * 60 * 24 * 120,  # ~120 days
+            secure=True,
+            httponly=True,
+            samesite="Lax",
+        )
+
+    return resp
 
 
 @staff_required
@@ -589,7 +669,29 @@ def application_action(request, app_id):
         return JsonResponse({"ok": False, "error": "bad_action"}, status=400)
 
     if action == "approve":
-        _ensure_client_from_application(app)
+        client = _ensure_client_from_application(app)
+        client.is_approved = True
+        client.save(update_fields=["is_approved"])
+
+        token = _ensure_client_token(client)
+        base = _get_public_base_url(request)
+        link = f"{base}/availability/?token={token}"
+
+        # Send approval email (best-effort)
+        to_email = (getattr(app, "email", "") or "").strip() or (getattr(client, "email", "") or "").strip()
+        if to_email:
+            send_mail(
+                subject="You’re approved to book",
+                message=(
+                    "Your application has been approved.\n\n"
+                    "Use this link to book your appointment:\n"
+                    f"{link}\n"
+                ),
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                recipient_list=[to_email],
+                fail_silently=True,
+            )
+
         app.status = "approved"
     else:
         app.status = "declined"
