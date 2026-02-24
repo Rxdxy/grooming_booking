@@ -3,7 +3,8 @@ import secrets
 
 from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
-from django.core.mail import send_mail
+import json
+import urllib.request
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Case, IntegerField, Max, Q, When
@@ -14,7 +15,52 @@ from django.views.decorators.http import require_POST
 
 from .forms import BookingRequestForm, NewClientApplicationForm
 from .models import BookingRequest, Client, NewClientApplication, Service
+
 # Helper functions for booking email notifications
+
+
+def _send_resend_email(to_email: str, subject: str, message: str) -> bool:
+    """Send a plain-text email using Resend.
+
+    Best-effort only: returns False if no recipient, True if attempted.
+    Never raises.
+    """
+    to_addr = (to_email or "").strip()
+    if not to_addr:
+        return False
+
+    api_key = (getattr(settings, "RESEND_API_KEY", "") or "").strip()
+    if not api_key:
+        return False
+
+    from_email = (getattr(settings, "DEFAULT_FROM_EMAIL", "") or "").strip()
+    if not from_email:
+        # Resend dev sender (works for testing)
+        from_email = "Proxbook <onboarding@resend.dev>"
+
+    payload = {
+        "from": from_email,
+        "to": [to_addr],
+        "subject": subject,
+        "text": message,
+    }
+
+    try:
+        req = urllib.request.Request(
+            url="https://api.resend.com/emails",
+            data=json.dumps(payload).encode("utf-8"),
+            method="POST",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+        )
+
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            # Any 2xx means accepted
+            return 200 <= getattr(resp, "status", 0) < 300
+    except Exception:
+        return True
 
 def _get_booking_email(booking) -> str:
     """Best-effort lookup for a client's email address.
@@ -50,13 +96,7 @@ def _send_booking_email(booking, subject: str, lines: list[str]) -> bool:
 
     try:
         message = "\n".join([ln for ln in lines if ln is not None])
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-            recipient_list=[to_email],
-            fail_silently=True,
-        )
+        _send_resend_email(to_email, subject, message)
         return True
     except Exception:
         return True
@@ -300,12 +340,10 @@ def apply(request):
             to_email = (getattr(app, "email", "") or "").strip()
             if to_email:
                 try:
-                    send_mail(
-                        subject="Application received",
-                        message="We received your application. We’ll notify you once you’re approved.",
-                        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-                        recipient_list=[to_email],
-                        fail_silently=True,
+                    _send_resend_email(
+                        to_email,
+                        "Application received",
+                        "We received your application. We’ll notify you once you’re approved.",
                     )
                 except Exception:
                     pass
@@ -712,16 +750,12 @@ def application_action(request, app_id):
         to_email = (getattr(app, "email", "") or "").strip() or (getattr(client, "email", "") or "").strip()
         if to_email:
             try:
-                send_mail(
-                    subject="You’re approved to book",
-                    message=(
-                        "Your application has been approved.\n\n"
-                        "Use this link to book your appointment:\n"
-                        f"{link}\n"
-                    ),
-                    from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-                    recipient_list=[to_email],
-                    fail_silently=True,
+                _send_resend_email(
+                    to_email,
+                    "You’re approved to book",
+                    "Your application has been approved.\n\n"
+                    "Use this link to book your appointment:\n"
+                    f"{link}\n",
                 )
             except Exception:
                 pass
