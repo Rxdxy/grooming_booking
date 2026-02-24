@@ -55,6 +55,15 @@ class Client(models.Model):
     address = models.CharField(max_length=255)
     phone = models.CharField(max_length=30)
     email = models.EmailField(null=True, blank=True)
+    # Approved clients can book using a magic link token (no customer accounts needed).
+    is_approved = models.BooleanField(default=False)
+    approval_token = models.CharField(
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
     is_active = models.BooleanField(default=True)
 
