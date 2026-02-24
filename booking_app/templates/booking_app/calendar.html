@@ -893,7 +893,7 @@
 
           (async () => {
             const resp = await postAppAction(appId, action);
-            if (!resp || !resp.ok) {
+            if (!resp || resp.error) {
               if (approveBtn) approveBtn.disabled = false;
               if (declineBtn) declineBtn.disabled = false;
               showToast("Could not update. Try again.");
