@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import resend
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -134,13 +134,15 @@ SOFT_GATE_BOOKING = True
 # Email (Phase 6 – confirmations)
 # ===============================
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp-mail.outlook.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_TIMEOUT = 5
+#EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+#EMAIL_HOST = "smtp-mail.outlook.com"
+#EMAIL_PORT = 587
+#EMAIL_USE_TLS = True
+#EMAIL_TIMEOUT = 5
 
-EMAIL_HOST_USER = "proxbook.confirmations@outlook.com"
-EMAIL_HOST_PASSWORD = "Proxbook99."
+#EMAIL_HOST_USER = "proxbook.confirmations@outlook.com"
+#EMAIL_HOST_PASSWORD = "your-email-password-here"
 
 DEFAULT_FROM_EMAIL = "Proxbook <proxbook.confirmations@outlook.com>"
+RESEND_API_KEY = "PASTE_YOUR_RESEND_API_KEY"
+resend.api_key = RESEND_API_KEY
