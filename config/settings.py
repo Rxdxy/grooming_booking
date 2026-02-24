@@ -143,6 +143,6 @@ SOFT_GATE_BOOKING = True
 #EMAIL_HOST_USER = "proxbook.confirmations@outlook.com"
 #EMAIL_HOST_PASSWORD = "your-email-password-here"
 
-DEFAULT_FROM_EMAIL = "Proxbook <proxbook.confirmations@outlook.com>"
+DEFAULT_FROM_EMAIL = "Proxbook <onboarding@resend.dev>"
 RESEND_API_KEY = "re_4BUFDehh_9oVKYuLP6x19k4KjBvWH8sRC"
 resend.api_key = RESEND_API_KEY
