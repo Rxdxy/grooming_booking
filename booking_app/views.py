@@ -79,6 +79,7 @@ def book_request(request):
             full_name = (form.cleaned_data.get("full_name") or "").strip()
             address = (form.cleaned_data.get("address") or "").strip()
             phone = (form.cleaned_data.get("phone") or "").strip()
+            email = (form.cleaned_data.get("email") or "").strip()
 
             is_staff_user = request.user.is_authenticated and request.user.is_staff
 
@@ -113,7 +114,12 @@ def book_request(request):
                                 full_name=full_name,
                                 address=address,
                                 phone=phone,
+                                email=email,
                             )
+                        # Best-effort sync: fill in email on existing client if missing
+                        if email and (not getattr(client, "email", None)):
+                            client.email = email
+                            client.save(update_fields=["email"])
 
                         booking = form.save(commit=False)
                         booking.client = client
@@ -218,7 +224,7 @@ def apply(request):
     if request.method == "POST":
         form = NewClientApplicationForm(request.POST)
         if form.is_valid():
-            form.save()
+            app = form.save()
             return redirect("apply_success")
     else:
         form = NewClientApplicationForm()
@@ -524,6 +530,7 @@ def _ensure_client_from_application(app):
     phone = (getattr(app, "phone", "") or "").strip()
     address = (getattr(app, "address", "") or "").strip()
     full_name = (getattr(app, "full_name", "") or "").strip()
+    email = (getattr(app, "email", "") or "").strip()
 
     qs = Client.objects.all()
 
@@ -535,12 +542,16 @@ def _ensure_client_from_application(app):
 
     existing = qs.first()
     if existing:
+        if email and (not getattr(existing, "email", None)):
+            existing.email = email
+            existing.save(update_fields=["email"])
         return existing
 
     return Client.objects.create(
         full_name=full_name,
         address=address,
         phone=phone,
+        email=email,
     )
 
 
