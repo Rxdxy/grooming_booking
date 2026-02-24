@@ -129,3 +129,17 @@ LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/calendar/"
 LOGOUT_REDIRECT_URL = "/login/"
 SOFT_GATE_BOOKING = True
+
+# ===============================
+# Email (Phase 6 – confirmations)
+# ===============================
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.office365.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = "proxbook.confirmations@outlook.com"
+EMAIL_HOST_PASSWORD = "Proxbook99."
+
+DEFAULT_FROM_EMAIL = "Proxbook <proxbook.confirmations@outlook.com>"
