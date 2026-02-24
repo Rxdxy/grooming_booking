@@ -29,6 +29,7 @@
         {% csrf_token %}
         <input type="hidden" name="scheduled_start" id="scheduledStartInput" />
         <input type="hidden" name="scheduled_end" id="scheduledEndInput" />
+        <input type="hidden" name="approval_token" id="approvalTokenInput" value="{{ request.GET.approval_token|default:'' }}" />
 
         {% if request.GET.admin == "1" %}
           <div class="alert alert-info small" role="alert">
