@@ -256,6 +256,18 @@ def book_request(request):
                         booking.save()
                         form.save_m2m()
 
+                    # Send booking submitted email (best-effort)
+                    _send_booking_email(
+                        booking,
+                        "Booking request received",
+                        [
+                            "We received your booking request.",
+                            "",
+                            f"Start: {booking.scheduled_start}",
+                            f"End: {booking.scheduled_end}",
+                        ],
+                    )
+
                     return redirect("book_success")
 
                 except ValidationError as e:
@@ -283,6 +295,21 @@ def apply(request):
         form = NewClientApplicationForm(request.POST)
         if form.is_valid():
             app = form.save()
+
+            # Send application received email (best-effort)
+            to_email = (getattr(app, "email", "") or "").strip()
+            if to_email:
+                try:
+                    send_mail(
+                        subject="Application received",
+                        message="We received your application. We’ll notify you once you’re approved.",
+                        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                        recipient_list=[to_email],
+                        fail_silently=True,
+                    )
+                except Exception:
+                    pass
+
             return redirect("apply_success")
     else:
         form = NewClientApplicationForm()
