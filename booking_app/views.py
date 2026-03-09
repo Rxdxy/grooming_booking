@@ -548,6 +548,12 @@ def booking_action(request, booking_id):
     booking = get_object_or_404(BookingRequest, id=booking_id)
 
     action = (request.POST.get("action") or "").strip().lower()
+
+    # Backward compatibility: some calendar UI paths may still send
+    # "approve" for booking approval even though bookings use "confirm".
+    if action == "approve":
+        action = "confirm"
+
     if action not in {"confirm", "decline"}:
         return JsonResponse({"ok": False, "error": "bad_action"}, status=400)
 
