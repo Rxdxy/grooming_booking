@@ -549,11 +549,11 @@ def booking_action(request, booking_id):
 
     action = (request.POST.get("action") or "").strip().lower()
 
-    if action not in {"approve", "decline"}:
+    if action not in {"confirm", "decline"}:
         return JsonResponse({"ok": False, "error": "bad_action"}, status=400)
 
-    if action == "approve":
-        booking.status = "approved"
+    if action == "confirm":
+        booking.status = "confirmed"
     else:
         booking.status = "declined"
 
