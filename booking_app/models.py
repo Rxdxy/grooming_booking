@@ -55,6 +55,7 @@ class Client(models.Model):
     phone = models.CharField(max_length=30)
 
     is_active = models.BooleanField(default=True)
+    is_approved = models.BooleanField(default=True)
 
     def __str__(self):
         return self.full_name
