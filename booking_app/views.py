@@ -490,11 +490,17 @@ def _ensure_client_from_application(app):
     if existing:
         return existing
 
-    return Client.objects.create(
-        full_name=full_name,
-        address=address,
-        phone=phone,
-    )
+    create_kwargs = {
+        "full_name": full_name,
+        "address": address,
+        "phone": phone,
+    }
+
+    client_field_names = {f.name for f in Client._meta.fields}
+    if "is_approved" in client_field_names:
+        create_kwargs["is_approved"] = True
+
+    return Client.objects.create(**create_kwargs)
 
 
 def pending_applications(request):
