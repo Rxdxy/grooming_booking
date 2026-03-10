@@ -218,7 +218,7 @@
   }
 
   .availability-drawer.is-open {
-    max-height: 390px;
+    max-height: 460px;
     box-shadow: 0 28px 70px rgba(15, 23, 42, 0.10);
   }
 
@@ -269,12 +269,15 @@
     position: relative;
     height: 224px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 78px 0.35rem;
     border: 1px solid #e5e7eb;
     border-radius: 22px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 10px 30px rgba(15, 23, 42, 0.06);
     scroll-snap-type: y mandatory;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
@@ -309,9 +312,10 @@
     top: 50%;
     height: 58px;
     transform: translateY(-50%);
-    border-top: 1px solid rgba(37,99,235,0.12);
-    border-bottom: 1px solid rgba(37,99,235,0.12);
-    background: rgba(219,234,254,0.45);
+    border-top: 1px solid rgba(37,99,235,0.16);
+    border-bottom: 1px solid rgba(37,99,235,0.16);
+    background: linear-gradient(180deg, rgba(219,234,254,0.72) 0%, rgba(191,219,254,0.88) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), 0 8px 18px rgba(37,99,235,0.10);
     border-radius: 18px;
     pointer-events: none;
     z-index: 2;
@@ -325,28 +329,33 @@
     border: 0;
     border-radius: 16px;
     background: transparent;
-    color: rgba(100,116,139,0.4);
+    color: rgba(100,116,139,0.28);
+    opacity: 0.45;
     padding: 0.2rem 0.8rem;
     text-align: center;
     font-weight: 500;
     font-size: 1.7rem;
     line-height: 1;
+    letter-spacing: -0.03em;
     box-shadow: none;
-    transition: color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+    transition: color 0.16s ease, transform 0.16s ease, opacity 0.16s ease, filter 0.16s ease;
     scroll-snap-align: center;
     margin-bottom: 0;
+    transform: scale(0.9);
+    filter: blur(0.2px);
   }
 
   .availability-wheel-option:hover {
-    color: rgba(255, 255, 255, 0.46);
-    transform: scale(1.01);
+    color: rgba(71,85,105,0.72);
   }
 
   .availability-wheel-option.is-selected {
     color: #2563eb;
     font-weight: 700;
     opacity: 1;
-    transform: scale(1.02);
+    transform: scale(1);
+    filter: none;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.35);
   }
 
   .availability-picker-footer {
@@ -383,7 +392,7 @@
     }
 
     .availability-drawer.is-open {
-      max-height: 560px;
+      max-height: 620px;
     }
 
     .availability-picker-grid {
@@ -393,6 +402,7 @@
     .availability-wheel {
       height: 196px;
       padding: 66px 0.25rem;
+      overflow-x: hidden;
     }
 
     .availability-wheel::after {
@@ -402,6 +412,7 @@
     .availability-wheel-option {
       min-height: 52px;
       font-size: 1.45rem;
+      transform: scale(0.92);
     }
   }
 </style>
@@ -560,11 +571,11 @@
 
       bindWheelScroll(target, onSelect);
       window.requestAnimationFrame(() => {
-        centerSelectedWheelOption(target);
+        centerSelectedWheelOption(target, "auto");
       });
     }
 
-    function centerSelectedWheelOption(target) {
+    function centerSelectedWheelOption(target, behavior = "smooth") {
       const selectedOption = target.querySelector(".availability-wheel-option.is-selected");
       if (!selectedOption) {
         return;
@@ -573,7 +584,7 @@
       const nextScrollTop = selectedOption.offsetTop - (target.clientHeight / 2) + (selectedOption.offsetHeight / 2);
       target.scrollTo({
         top: Math.max(nextScrollTop, 0),
-        behavior: "auto",
+        behavior,
       });
     }
 
@@ -602,8 +613,11 @@
           const nextValue = nearest.getAttribute("data-value") || "";
           if (nextValue) {
             onSelect(nextValue);
+            window.requestAnimationFrame(() => {
+              centerSelectedWheelOption(target, "smooth");
+            });
           }
-        }, 90);
+        }, 70);
       };
     }
 
