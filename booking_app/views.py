@@ -78,11 +78,17 @@ def book_request(request):
                         if existing_client:
                             client = existing_client
                         else:
-                            client = Client.objects.create(
-                                full_name=full_name,
-                                address=address,
-                                phone=phone,
-                            )
+                            create_kwargs = {
+                                "full_name": full_name,
+                                "address": address,
+                                "phone": phone,
+                            }
+
+                            client_field_names = {f.name for f in Client._meta.fields}
+                            if "is_approved" in client_field_names:
+                                create_kwargs["is_approved"] = True
+
+                            client = Client.objects.create(**create_kwargs)
 
                         booking = form.save(commit=False)
                         booking.client = client
