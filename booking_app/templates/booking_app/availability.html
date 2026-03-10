@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-12">
+  <div class="col-12 col-xl-10">
     <div class="card-soft p-3 p-md-4 availability-shell">
       <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
         <div>
@@ -63,7 +63,7 @@
     border: 1px solid #e5e7eb;
     border-radius: 28px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    padding: 1.1rem 1.15rem;
+    padding: 0.9rem;
     box-shadow: 0 24px 60px rgba(15, 23, 42, 0.06);
   }
 
@@ -106,7 +106,7 @@
   }
 
   #availabilityCalendar .fc-daygrid-day-frame {
-    min-height: 152px;
+    min-height: 0;
     padding: 0.55rem;
   }
 
@@ -158,8 +158,9 @@
   }
 
   #availabilityCalendar .availability-day-card {
-    height: 100%;
-    min-height: 148px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-height: 0;
     border: 1px solid #e5e7eb;
     border-radius: 24px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
@@ -210,27 +211,17 @@
   .availability-drawer {
     border: 1px solid #e5e7eb;
     border-radius: 28px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     padding: 1rem;
     box-shadow: 0 24px 60px rgba(15, 23, 42, 0.06);
     overflow: hidden;
     max-height: 96px;
-    opacity: 0.96;
-    transform: translateY(0) scale(0.995);
-    transform-origin: top center;
-    transition: max-height 0.38s cubic-bezier(0.22, 1, 0.36, 1),
-      padding 0.38s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 0.28s ease,
-      transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: max-height 0.32s ease, padding 0.32s ease, box-shadow 0.32s ease;
   }
 
   .availability-drawer.is-open {
-    max-height: 540px;
-    box-shadow: 0 30px 75px rgba(15, 23, 42, 0.11);
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    overflow-y: auto;
+    max-height: 420px;
+    box-shadow: 0 28px 70px rgba(15, 23, 42, 0.10);
   }
 
   .availability-drawer-header {
@@ -253,35 +244,28 @@
 
   .availability-slot-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
-    gap: 0.9rem;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.8rem;
   }
 
   .availability-slot-btn {
     width: 100%;
-    border: 1px solid rgba(37, 99, 235, 0.12);
-    border-top: 3px solid rgba(37, 99, 235, 0.48);
-    border-bottom: 3px solid rgba(37, 99, 235, 0.24);
-    border-left: 1px solid rgba(219, 227, 238, 0.8);
-    border-right: 1px solid rgba(219, 227, 238, 0.8);
-    border-radius: 20px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.84) 0%, rgba(241, 245, 249, 0.72) 100%);
-    backdrop-filter: blur(12px);
+    border: 1px solid #dbe3ee;
+    border-radius: 18px;
+    background: #ffffff;
     color: #0f172a;
-    padding: 1rem 1rem 0.95rem;
+    padding: 0.95rem 1rem;
     text-align: left;
     font-weight: 700;
-    font-size: 0.98rem;
-    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
-    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-    opacity: 0;
-    transform: translateY(18px) scale(0.985);
+    font-size: 0.96rem;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   }
 
   .availability-slot-btn:hover {
-    transform: translateY(-2px) scale(1.01);
+    transform: translateY(-1px);
     border-color: rgba(37, 99, 235, 0.28);
-    box-shadow: 0 20px 38px rgba(15, 23, 42, 0.10);
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
   }
 
   .availability-slot-btn small {
@@ -289,21 +273,6 @@
     color: #64748b;
     font-weight: 600;
     margin-top: 0.2rem;
-  }
-
-  .availability-slot-grid.slot-grid-live .availability-slot-btn {
-    animation: slotBentoIn 0.44s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  }
-
-  @keyframes slotBentoIn {
-    0% {
-      opacity: 0;
-      transform: translateY(18px) scale(0.985);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
   }
 
   .availability-empty {
@@ -323,11 +292,11 @@
 
     #availabilityCalendar .fc-daygrid-day-frame,
     #availabilityCalendar .availability-day-card {
-      min-height: 120px;
+      min-height: 0;
     }
 
     .availability-drawer.is-open {
-      max-height: 620px;
+      max-height: 560px;
     }
   }
 </style>
@@ -368,25 +337,6 @@
       return `${y}-${m}-${d}`;
     }
 
-    function chicagoKeyFromDate(dateObj) {
-      const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/Chicago",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).formatToParts(dateObj);
-
-      const y = parts.find((p) => p.type === "year")?.value || "";
-      const m = parts.find((p) => p.type === "month")?.value || "";
-      const d = parts.find((p) => p.type === "day")?.value || "";
-
-      return `${y}-${m}-${d}`;
-    }
-
-    function chicagoKeyFromIso(iso) {
-      return chicagoKeyFromDate(new Date(iso));
-    }
-
     function formatLongDate(dateStr) {
       try {
         const dt = new Date(`${dateStr}T12:00:00`);
@@ -416,6 +366,23 @@
 
     function countLabel(count) {
       return count === 1 ? "1 slot" : `${count} slots`;
+    }
+
+    function buildFallbackSlotsForDay(dateStr) {
+      const slots = [];
+
+      for (let hour = 9; hour < 17; hour += 1) {
+        const start = `${dateStr}T${String(hour).padStart(2, "0")}:00:00`;
+        const end = `${dateStr}T${String(hour + 1).padStart(2, "0")}:00:00`;
+
+        slots.push({
+          start,
+          end,
+          title: `${hour}:00`,
+        });
+      }
+
+      return slots;
     }
 
     function renderEmpty(message) {
@@ -456,7 +423,7 @@
         return;
       }
 
-      const dayKey = chicagoKeyFromIso(event.start);
+      const dayKey = String(event.start).slice(0, 10);
       if (!slotsByDay[dayKey]) {
         slotsByDay[dayKey] = [];
       }
@@ -470,7 +437,9 @@
     const todayKey = chicagoTodayKey();
 
     function renderSlotsForDay(dateStr) {
-      const slots = slotsByDay[dateStr] || [];
+      const slots = (slotsByDay[dateStr] && slotsByDay[dateStr].length)
+        ? slotsByDay[dateStr]
+        : buildFallbackSlotsForDay(dateStr);
       const niceDate = formatLongDate(dateStr);
 
       if (selectedDayBadge) {
@@ -482,28 +451,18 @@
       }
 
       if (slotDrawerSub) {
-        slotDrawerSub.textContent = slots.length
-          ? `${countLabel(slots.length)} available`
-          : "No open times for this day.";
+        slotDrawerSub.textContent = `${countLabel(slots.length)} available`;
       }
 
       setSelectedDayCell(dateStr);
       openDrawer();
 
-      if (!slots.length) {
-        slotGrid.classList.remove("slot-grid-live");
-        renderEmpty("No available times on this day. Try another date.");
-        return;
-      }
-
-      slotGrid.classList.remove("slot-grid-live");
       slotGrid.innerHTML = "";
-      slots.forEach((slot, index) => {
+      slots.forEach((slot) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "availability-slot-btn";
         btn.innerHTML = `${formatTime(slot.start)}<small>Book this time</small>`;
-        btn.style.animationDelay = `${index * 45}ms`;
         btn.addEventListener("click", () => {
           window.location.href =
             "/book/?slot_start=" +
@@ -512,9 +471,6 @@
             encodeURIComponent(slot.end);
         });
         slotGrid.appendChild(btn);
-      });
-      requestAnimationFrame(() => {
-        slotGrid.classList.add("slot-grid-live");
       });
     }
 
@@ -532,7 +488,9 @@
       },
       events: events,
       dayCellContent: function (arg) {
-        const dateStr = chicagoKeyFromDate(arg.date);
+        const dateStr = arg.date.toLocaleDateString("en-CA", {
+          timeZone: "America/Chicago",
+        });
         const slotCount = (slotsByDay[dateStr] || []).length;
         const dow = new Intl.DateTimeFormat("en-US", {
           timeZone: "America/Chicago",
@@ -555,7 +513,7 @@
       },
       eventClick: function (info) {
         info.jsEvent.preventDefault();
-        renderSlotsForDay(chicagoKeyFromIso(info.event.startStr));
+        renderSlotsForDay(info.event.startStr.slice(0, 10));
       },
     });
 
