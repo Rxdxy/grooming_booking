@@ -984,7 +984,7 @@ button:focus-visible{
   border: 0;
   border-radius: 18px;
   background: transparent;
-  color: rgba(15, 23, 42, 0.28);
+  color: rgba(100, 116, 139, 0.34);
   padding: 0.35rem 1rem;
   text-align: center;
   font-weight: 500;
@@ -997,20 +997,25 @@ button:focus-visible{
 }
 
 .availability-wheel-option:hover {
-  color: rgba(15, 23, 42, 0.52);
+  color: rgba(71, 85, 105, 0.72);
   transform: scale(1.01);
 }
 
 .availability-wheel-option.is-selected {
-  color: #0f172a;
+  color: #2563eb;
   font-weight: 700;
   opacity: 1;
   transform: scale(1.02);
 }
 
-#availabilityCalendar .fc-daygrid-day.selected-day {
-  background: rgba(219, 234, 254, 0.8);
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18);
+#availabilityCalendar .fc-daygrid-day.selected-day,
+#availabilityCalendar .fc-daygrid-day.selected-day .fc-daygrid-day-frame {
+  background: rgba(219, 234, 254, 0.9) !important;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.24) !important;
+}
+
+#availabilityCalendar .fc-daygrid-day.selected-day .fc-daygrid-day-number {
+  color: #2563eb !important;
 }
 
 @media (max-width: 767.98px) {
