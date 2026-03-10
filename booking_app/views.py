@@ -29,30 +29,39 @@ def book_request(request):
         if form.is_valid():
             # Soft gate: when enabled, only allow staff OR known existing active clients to book.
             # New clients must apply first and be approved.
-            full_name = (form.cleaned_data.get("full_name") or "").strip()
+            full_name = " ".join(
+                ((form.cleaned_data.get("full_name") or "").strip()).split()
+            )
             address = (form.cleaned_data.get("address") or "").strip()
             phone = (form.cleaned_data.get("phone") or "").strip()
+            phone = "".join(ch for ch in phone if ch.isdigit())
 
             is_staff_user = request.user.is_authenticated and request.user.is_staff
 
             existing_client = None
 
+            normalized_full_name = " ".join((full_name or "").split())
+            normalized_phone = "".join(ch for ch in (phone or "") if ch.isdigit())
+
             # Existing-client matching for the public booking flow.
             # Do NOT require address to match because clients may not enter it
-            # the same way every time. Prefer phone first, then fall back to
-            # full name when phone is missing.
-            if phone:
+            # the same way every time. Prefer normalized phone first, then
+            # fall back to full name.
+            if normalized_phone:
                 existing_client = (
-                    Client.objects.filter(is_active=True, phone=phone)
+                    Client.objects.filter(
+                        is_active=True,
+                        phone=normalized_phone,
+                    )
                     .order_by("id")
                     .first()
                 )
 
-            if existing_client is None and full_name:
+            if existing_client is None and normalized_full_name:
                 existing_client = (
                     Client.objects.filter(
                         is_active=True,
-                        full_name__iexact=full_name,
+                        full_name__iexact=normalized_full_name,
                     )
                     .order_by("id")
                     .first()
