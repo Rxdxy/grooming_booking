@@ -35,21 +35,28 @@ def book_request(request):
 
             is_staff_user = request.user.is_authenticated and request.user.is_staff
 
-            qs = Client.objects.filter(is_active=True)
+            existing_client = None
 
-            # Prefer matching by phone (most reliable), and also match address when present.
+            # Existing-client matching for the public booking flow.
+            # Do NOT require address to match because clients may not enter it
+            # the same way every time. Prefer phone first, then fall back to
+            # full name when phone is missing.
             if phone:
-                qs = qs.filter(phone=phone)
-                if address:
-                    qs = qs.filter(address=address)
-            else:
-                # Fallback matching when phone is missing (should be rare)
-                if full_name:
-                    qs = qs.filter(full_name=full_name)
-                if address:
-                    qs = qs.filter(address=address)
+                existing_client = (
+                    Client.objects.filter(is_active=True, phone=phone)
+                    .order_by("id")
+                    .first()
+                )
 
-            existing_client = qs.order_by("id").first()
+            if existing_client is None and full_name:
+                existing_client = (
+                    Client.objects.filter(
+                        is_active=True,
+                        full_name__iexact=full_name,
+                    )
+                    .order_by("id")
+                    .first()
+                )
 
             if getattr(settings, "SOFT_GATE_BOOKING", False) and (not is_staff_user) and (existing_client is None):
                 form.add_error(
