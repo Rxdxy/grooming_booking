@@ -130,11 +130,13 @@
 
   #availabilityCalendar .fc-daygrid-day-frame {
     min-height: 0;
-    padding: 0.45rem 0.6rem;
+    padding: 0;
+    height: 100%;
   }
 
   #availabilityCalendar .fc-daygrid-day {
     padding: 0.45rem;
+    background: transparent;
   }
 
   #availabilityCalendar .fc-daygrid-day-number {
@@ -170,38 +172,33 @@
   }
 
   #availabilityCalendar .fc-daygrid-day-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    display: none;
   }
 
-  #availabilityCalendar .fc-daygrid-day.fc-day-today .availability-day-card {
+  #availabilityCalendar .fc-daygrid-day.fc-day-today {
     border-color: rgba(37, 99, 235, 0.28);
     box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.08) inset;
   }
 
-  #availabilityCalendar .availability-day-card {
-    width: 100%;
-    aspect-ratio: 1.18 / 1;
+  #availabilityCalendar .fc-daygrid-day {
+    aspect-ratio: 1 / 1;
     min-height: 0;
     border: 1px solid #e5e7eb;
     border-radius: 30px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
-    padding: 1rem 1.1rem 0.92rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    padding: 0.95rem 1rem 0.9rem;
     transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    overflow: hidden;
   }
 
-  #availabilityCalendar .fc-daygrid-day:hover .availability-day-card {
+  #availabilityCalendar .fc-daygrid-day:hover {
     transform: translateY(-1px);
     box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
     border-color: #dbe3ee;
   }
 
-  #availabilityCalendar .fc-daygrid-day.selected-day .availability-day-card {
+  #availabilityCalendar .fc-daygrid-day.selected-day {
     border-color: rgba(37, 99, 235, 0.35);
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.10), 0 18px 36px rgba(15, 23, 42, 0.08);
   }
@@ -233,6 +230,13 @@
     font-size: 0.9rem;
     font-weight: 600;
     align-self: flex-start;
+  }
+
+  #availabilityCalendar .availability-day-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   #availabilityCalendar .fc-event,
@@ -375,7 +379,7 @@
       min-height: 0;
     }
 
-    #availabilityCalendar .availability-day-card {
+    #availabilityCalendar .fc-daygrid-day {
       aspect-ratio: 1 / 1;
     }
 
