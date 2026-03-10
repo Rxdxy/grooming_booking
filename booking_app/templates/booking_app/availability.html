@@ -1,8 +1,6 @@
 {% extends "booking_app/base.html" %}
 {% block title %}Availability{% endblock %}
 
-
-
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-12 col-lg-10">
@@ -29,6 +27,36 @@
     </div>
   </div>
 </div>
+
+<style>
+  #availabilityCalendar .fc-theme-standard td,
+  #availabilityCalendar .fc-theme-standard th,
+  #availabilityCalendar .fc-scrollgrid,
+  #availabilityCalendar .fc-scrollgrid-section > * {
+    border-color: #eef2f7;
+  }
+
+  #availabilityCalendar .fc-timegrid-slot {
+    border-top: 1px solid rgba(148, 163, 184, 0.10);
+  }
+
+  #availabilityCalendar .fc-timegrid-slot-minor {
+    border-top-color: rgba(148, 163, 184, 0.05);
+  }
+
+  #availabilityCalendar .fc-timegrid-col {
+    background: #ffffff;
+  }
+
+  #availabilityCalendar .fc-timegrid-now-indicator-line {
+    opacity: 0.35;
+  }
+
+  #availabilityCalendar .fc-timegrid-axis,
+  #availabilityCalendar .fc-col-header-cell {
+    background: #f8fafc;
+  }
+</style>
 
 <link
   href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css"
