@@ -32,8 +32,31 @@
           </div>
         </div>
 
-        <div class="availability-slot-grid" id="slotGrid">
-          <div class="availability-empty">Click a calendar day to view open times.</div>
+        <div class="availability-picker-shell" id="pickerShell">
+          <div class="availability-picker-grid">
+            <div class="availability-picker-column">
+              <div class="availability-picker-label">Start time</div>
+              <div class="availability-wheel" id="startWheel">
+                <div class="availability-empty">Click a calendar day to choose a start time.</div>
+              </div>
+            </div>
+
+            <div class="availability-picker-column">
+              <div class="availability-picker-label">End time</div>
+              <div class="availability-wheel" id="endWheel">
+                <div class="availability-empty">Choose a start time first.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="availability-picker-footer">
+            <div class="availability-selection-summary" id="selectionSummary">
+              Select a day and time range.
+            </div>
+            <button type="button" class="btn btn-accent" id="continueBookingBtn" disabled>
+              Continue booking
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -242,40 +265,84 @@
     font-size: 0.92rem;
   }
 
-  .availability-slot-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.8rem;
+  .availability-picker-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 
-  .availability-slot-btn {
+  .availability-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .availability-picker-column {
+    min-width: 0;
+  }
+
+  .availability-picker-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .availability-wheel {
+    height: 256px;
+    overflow-y: auto;
+    padding: 0.35rem;
+    border: 1px solid #dbe3ee;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 10px 24px rgba(15, 23, 42, 0.05);
+    scroll-snap-type: y proximity;
+  }
+
+  .availability-wheel-option {
     width: 100%;
-    border: 1px solid rgba(37, 99, 235, 0.30);
+    border: 1px solid rgba(37, 99, 235, 0.20);
     border-radius: 18px;
-    background: linear-gradient(180deg, rgba(219, 234, 254, 0.92) 0%, rgba(191, 219, 254, 0.82) 100%);
+    background: linear-gradient(180deg, rgba(219, 234, 254, 0.72) 0%, rgba(191, 219, 254, 0.56) 100%);
     color: #1e3a8a;
-    padding: 0.95rem 1rem;
+    padding: 0.9rem 1rem;
     text-align: left;
     font-weight: 700;
-    font-size: 0.96rem;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 10px 24px rgba(37, 99, 235, 0.12);
+    font-size: 0.98rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 8px 18px rgba(37, 99, 235, 0.08);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    scroll-snap-align: center;
+    margin-bottom: 0.55rem;
   }
 
-  .availability-slot-btn:hover {
+  .availability-wheel-option:hover {
     transform: translateY(-1px);
-    border-color: rgba(30, 64, 175, 0.45);
-    background: linear-gradient(180deg, rgba(219, 234, 254, 0.98) 0%, rgba(147, 197, 253, 0.88) 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 16px 32px rgba(37, 99, 235, 0.18);
+    border-color: rgba(30, 64, 175, 0.34);
+    background: linear-gradient(180deg, rgba(219, 234, 254, 0.88) 0%, rgba(147, 197, 253, 0.72) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 14px 28px rgba(37, 99, 235, 0.14);
   }
 
-  .availability-slot-btn small {
-    display: block;
-    color: rgba(30, 64, 175, 0.78);
+  .availability-wheel-option.is-selected {
+    border-color: rgba(30, 64, 175, 0.48);
+    background: linear-gradient(180deg, rgba(191, 219, 254, 0.98) 0%, rgba(96, 165, 250, 0.82) 100%);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.10), 0 16px 30px rgba(37, 99, 235, 0.18);
+  }
+
+  .availability-picker-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .availability-selection-summary {
+    color: #64748b;
     font-weight: 600;
-    margin-top: 0.2rem;
   }
 
   .availability-empty {
@@ -301,6 +368,14 @@
     .availability-drawer.is-open {
       max-height: 560px;
     }
+
+    .availability-picker-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .availability-wheel {
+      height: 220px;
+    }
   }
 </style>
 
@@ -318,8 +393,11 @@
     const slotDrawer = document.getElementById("slotDrawer");
     const slotDrawerTitle = document.getElementById("slotDrawerTitle");
     const slotDrawerSub = document.getElementById("slotDrawerSub");
-    const slotGrid = document.getElementById("slotGrid");
+    const startWheel = document.getElementById("startWheel");
+    const endWheel = document.getElementById("endWheel");
     const selectedDayBadge = document.getElementById("selectedDayBadge");
+    const selectionSummary = document.getElementById("selectionSummary");
+    const continueBookingBtn = document.getElementById("continueBookingBtn");
 
     function chicagoNow() {
       return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Chicago" }));
@@ -396,12 +474,129 @@
       return slots;
     }
 
-    function renderEmpty(message) {
-      slotGrid.innerHTML = `<div class="availability-empty">${message}</div>`;
+    function renderEmpty(target, message) {
+      target.innerHTML = `<div class="availability-empty">${message}</div>`;
     }
 
     function openDrawer() {
       slotDrawer.classList.add("is-open");
+    }
+
+    let selectedDate = "";
+    let selectedStart = "";
+    let selectedEnd = "";
+
+    function timeValueToLabel(value) {
+      const [hourText, minuteText] = value.split(":");
+      const rawHour = Number(hourText);
+      const minute = minuteText;
+      const suffix = rawHour >= 12 ? "PM" : "AM";
+      const hour12 = rawHour % 12 === 0 ? 12 : rawHour % 12;
+      return `${hour12}:${minute} ${suffix}`;
+    }
+
+    function buildTimeValues() {
+      const values = [];
+      for (let hour = 9; hour <= 17; hour += 1) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          if (hour === 17 && minute > 0) {
+            continue;
+          }
+          values.push(`${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`);
+        }
+      }
+      return values;
+    }
+
+    const allTimeValues = buildTimeValues();
+
+    function renderWheel(target, options, selectedValue, onSelect) {
+      target.innerHTML = "";
+
+      if (!options.length) {
+        renderEmpty(target, "No times available.");
+        return;
+      }
+
+      options.forEach((value) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "availability-wheel-option";
+        if (value === selectedValue) {
+          btn.classList.add("is-selected");
+        }
+        btn.textContent = timeValueToLabel(value);
+        btn.addEventListener("click", () => onSelect(value));
+        target.appendChild(btn);
+      });
+    }
+
+    function updateSummary() {
+      if (!selectionSummary) {
+        return;
+      }
+
+      if (!selectedDate || !selectedStart || !selectedEnd) {
+        selectionSummary.textContent = "Select a day and time range.";
+      } else {
+        selectionSummary.textContent = `${formatLongDate(selectedDate)} • ${timeValueToLabel(selectedStart)} to ${timeValueToLabel(selectedEnd)}`;
+      }
+
+      if (continueBookingBtn) {
+        continueBookingBtn.disabled = !(selectedDate && selectedStart && selectedEnd);
+      }
+    }
+
+    function renderEndWheel() {
+      const endOptions = allTimeValues.filter((value) => value > selectedStart);
+      if (!selectedEnd || !endOptions.includes(selectedEnd)) {
+        selectedEnd = endOptions.length ? endOptions[0] : "";
+      }
+      renderWheel(endWheel, endOptions, selectedEnd, (value) => {
+        selectedEnd = value;
+        renderEndWheel();
+        updateSummary();
+      });
+    }
+
+    function renderTimePicker(dateStr) {
+      selectedDate = dateStr;
+      selectedStart = selectedStart || "09:00";
+      const startOptions = allTimeValues.filter((value) => value < "17:00");
+      const handleStartSelect = (value) => {
+        selectedStart = value;
+        renderWheel(startWheel, startOptions, selectedStart, handleStartSelect);
+        renderEndWheel();
+        updateSummary();
+      };
+      renderWheel(startWheel, startOptions, selectedStart, handleStartSelect);
+      renderEndWheel();
+      updateSummary();
+    }
+
+    function renderSlotsForDay(dateStr) {
+      const slots = getSlotsForDay(dateStr);
+      const niceDate = formatLongDate(dateStr);
+
+      if (selectedDayBadge) {
+        selectedDayBadge.textContent = niceDate;
+      }
+
+      if (slotDrawerTitle) {
+        slotDrawerTitle.textContent = niceDate;
+      }
+
+      if (slotDrawerSub) {
+        slotDrawerSub.textContent = slots.length
+          ? "Choose a start and end time in 30 minute intervals."
+          : "Choose a start and end time in 30 minute intervals.";
+      }
+
+      setSelectedDayCell(dateStr);
+      openDrawer();
+      selectedStart = "09:00";
+      selectedEnd = "09:30";
+      renderTimePicker(dateStr);
     }
 
     function setSelectedDayCell(dateStr) {
@@ -447,42 +642,6 @@
 
     const todayKey = chicagoTodayKey();
 
-    function renderSlotsForDay(dateStr) {
-      const slots = getSlotsForDay(dateStr);
-      const niceDate = formatLongDate(dateStr);
-
-      if (selectedDayBadge) {
-        selectedDayBadge.textContent = niceDate;
-      }
-
-      if (slotDrawerTitle) {
-        slotDrawerTitle.textContent = niceDate;
-      }
-
-      if (slotDrawerSub) {
-        slotDrawerSub.textContent = `${countLabel(slots.length)} available`;
-      }
-
-      setSelectedDayCell(dateStr);
-      openDrawer();
-
-      slotGrid.innerHTML = "";
-      slots.forEach((slot) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "availability-slot-btn";
-        btn.innerHTML = `${formatTime(slot.start)}<small>Book this time</small>`;
-        btn.addEventListener("click", () => {
-          window.location.href =
-            "/book/?slot_start=" +
-            encodeURIComponent(slot.start) +
-            "&slot_end=" +
-            encodeURIComponent(slot.end);
-        });
-        slotGrid.appendChild(btn);
-      });
-    }
-
     const calendar = new FullCalendar.Calendar(el, {
       timeZone: "America/Chicago",
       initialView: "dayGridMonth",
@@ -527,7 +686,26 @@
     });
 
     calendar.render();
-    renderEmpty("Click a calendar day to view open times.");
+    renderEmpty(startWheel, "Click a calendar day to choose a start time.");
+    renderEmpty(endWheel, "Choose a start time first.");
+    updateSummary();
+
+    if (continueBookingBtn) {
+      continueBookingBtn.addEventListener("click", () => {
+        if (!selectedDate || !selectedStart || !selectedEnd) {
+          return;
+        }
+
+        const startIso = `${selectedDate}T${selectedStart}:00`;
+        const endIso = `${selectedDate}T${selectedEnd}:00`;
+
+        window.location.href =
+          "/book/?slot_start=" +
+          encodeURIComponent(startIso) +
+          "&slot_end=" +
+          encodeURIComponent(endIso);
+      });
+    }
   });
 </script>
 {% endblock %}
