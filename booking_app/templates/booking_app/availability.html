@@ -273,8 +273,25 @@
     padding: 78px 0.35rem;
     border: 1px solid #e5e7eb;
     border-radius: 22px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 10px 30px rgba(15, 23, 42, 0.06);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(248,250,252,0.95) 0%,
+        rgba(248,250,252,0.7) 20%,
+        rgba(248,250,252,0) 40%,
+        rgba(248,250,252,0) 60%,
+        rgba(248,250,252,0.7) 80%,
+        rgba(248,250,252,0.95) 100%
+      ),
+      linear-gradient(
+        180deg,
+        transparent 0 calc(50% - 29px),
+        rgba(219,234,254,0.72) calc(50% - 29px),
+        rgba(191,219,254,0.88) calc(50% + 29px),
+        transparent calc(50% + 29px) 100%
+      ),
+      linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 10px 30px rgba(15,23,42,0.06);
     scroll-snap-type: y mandatory;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
@@ -286,51 +303,17 @@
     display: none;
   }
 
-  .availability-wheel::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: 24px;
-    background: linear-gradient(
-      180deg,
-      rgba(248,250,252,0.95) 0%,
-      rgba(248,250,252,0.7) 20%,
-      rgba(248,250,252,0) 40%,
-      rgba(248,250,252,0) 60%,
-      rgba(248,250,252,0.7) 80%,
-      rgba(248,250,252,0.95) 100%
-    );
-    z-index: 2;
-  }
-
-  .availability-wheel::after {
-    content: "";
-    position: absolute;
-    left: 0.45rem;
-    right: 0.45rem;
-    top: 50%;
-    height: 58px;
-    transform: translateY(-50%);
-    border-top: 1px solid rgba(37,99,235,0.16);
-    border-bottom: 1px solid rgba(37,99,235,0.16);
-    background: linear-gradient(180deg, rgba(219,234,254,0.72) 0%, rgba(191,219,254,0.88) 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), 0 8px 18px rgba(37,99,235,0.10);
-    border-radius: 18px;
-    pointer-events: none;
-    z-index: 2;
-  }
 
   .availability-wheel-option {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     width: 100%;
     min-height: 58px;
     border: 0;
     border-radius: 16px;
     background: transparent;
     color: rgba(100,116,139,0.28);
-    opacity: 0.45;
+    opacity: 0.38;
     padding: 0.2rem 0.8rem;
     text-align: center;
     font-weight: 500;
@@ -403,10 +386,24 @@
       height: 196px;
       padding: 66px 0.25rem;
       overflow-x: hidden;
-    }
-
-    .availability-wheel::after {
-      height: 52px;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(248,250,252,0.95) 0%,
+          rgba(248,250,252,0.72) 20%,
+          rgba(248,250,252,0) 40%,
+          rgba(248,250,252,0) 60%,
+          rgba(248,250,252,0.72) 80%,
+          rgba(248,250,252,0.95) 100%
+        ),
+        linear-gradient(
+          180deg,
+          transparent 0 calc(50% - 26px),
+          rgba(219,234,254,0.72) calc(50% - 26px),
+          rgba(191,219,254,0.88) calc(50% + 26px),
+          transparent calc(50% + 26px) 100%
+        ),
+        linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     }
 
     .availability-wheel-option {
