@@ -923,3 +923,108 @@ button:focus-visible{
 .fc a.event-pending .fc-event-time{
   color: inherit;
 }
+/* Availability page wheel polish */
+.availability-wheel {
+  position: relative;
+  height: 276px;
+  overflow-y: auto;
+  padding: 102px 0.4rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 14px 34px rgba(15, 23, 42, 0.08);
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.availability-wheel::-webkit-scrollbar {
+  display: none;
+}
+
+.availability-wheel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 24px;
+  background: linear-gradient(
+    180deg,
+    rgba(248, 250, 252, 0.96) 0%,
+    rgba(248, 250, 252, 0.78) 18%,
+    rgba(248, 250, 252, 0) 36%,
+    rgba(248, 250, 252, 0) 64%,
+    rgba(248, 250, 252, 0.78) 82%,
+    rgba(248, 250, 252, 0.96) 100%
+  );
+  z-index: 2;
+}
+
+.availability-wheel::after {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  top: 50%;
+  height: 72px;
+  transform: translateY(-50%);
+  border-top: 1px solid rgba(37, 99, 235, 0.12);
+  border-bottom: 1px solid rgba(37, 99, 235, 0.12);
+  background: rgba(219, 234, 254, 0.45);
+  border-radius: 18px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.availability-wheel-option {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 72px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: rgba(15, 23, 42, 0.28);
+  padding: 0.35rem 1rem;
+  text-align: center;
+  font-weight: 500;
+  font-size: 2.2rem;
+  line-height: 1;
+  box-shadow: none;
+  transition: color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+  scroll-snap-align: center;
+  margin-bottom: 0;
+}
+
+.availability-wheel-option:hover {
+  color: rgba(15, 23, 42, 0.52);
+  transform: scale(1.01);
+}
+
+.availability-wheel-option.is-selected {
+  color: #0f172a;
+  font-weight: 700;
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+#availabilityCalendar .fc-daygrid-day.selected-day {
+  background: rgba(219, 234, 254, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18);
+}
+
+@media (max-width: 767.98px) {
+  .availability-wheel {
+    height: 236px;
+    padding: 82px 0.3rem;
+  }
+
+  .availability-wheel::after {
+    height: 64px;
+  }
+
+  .availability-wheel-option {
+    min-height: 64px;
+    font-size: 1.85rem;
+  }
+}
